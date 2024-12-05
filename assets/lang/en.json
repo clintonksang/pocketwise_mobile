@@ -1,0 +1,65 @@
+{
+    "home":{
+        "account": "account",
+        "balance": "balance",
+        "all_pockets": "all pockets",
+        "deposit": "deposit",
+        "fund_pockets": "fund pockets",
+        "transactions": "transactions", 
+        "view_all": "view all",
+        "pockets": "my pockets",
+        "pocket": "my pocket",
+        "goodmorning": "good morning",
+        "goodafternoon": "good afternoon",
+        "goodevening": "good evening"
+    },
+    "pockets":{ 
+        "create": "create",
+        "create_pocket": "create pocket",
+        "transactions": "transactions",
+        "name": "name",
+        "amount": "amount",
+        "description": "description",
+        "add": "add",
+        "edit": "edit",
+        "delete": "delete",
+        "pocket_title": "pocket title",
+        "egwaterbill": "e.g water bill pocket",
+        "eg1000": "e.g 10000",
+        "category":"category",
+        "none_selected":"none selected",
+        "select": "select",
+        "fund_pocket_question": "would you like to fund pocket?",
+        "yes": "yes",
+        "no_later": "no, later",
+        "main_wallet": "main wallet",
+        "other_pockets": "other pockets",
+        "fund_pocket": "fund pocket",
+        "fund":"fund"
+
+
+
+
+    },
+    "settings":{
+        "language": "language"
+    },
+    "login":{
+        "login": "login",
+        "email": "email",
+        "password": "password",
+        "forgot": "forgot password?",
+        "register": "register",
+        "remember": "remember me"
+
+
+    },
+    "register":{
+        "register": "register",
+        "name": "name",
+        "email": "email",
+        "password": "password",
+        "confirm": "confirm password",
+        "phone": "phone"
+    }
+}

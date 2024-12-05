@@ -1,0 +1,134 @@
+trigger:
+  - master
+
+pool:
+  vmImage: 'macos-latest'
+
+# variables:
+#   - group: 'icealion variables'
+#   # - name: androidAPKDir
+#   #   value: $(build.artifactStagingDirectory)/build/app/outputs/flutter-apk
+#   # - name: apkFile
+#   #   value: $(androidAPKDir)/app-debug.apk
+#   # - name: appDirectory
+#   #   value: $(build.artifactStagingDirectory)/android/app
+#   - name: iosAppDirectory
+#     value: $(build.artifactStagingDirectory)/ios
+
+stages: 
+  # - stage: AndroidDev
+  #   displayName: 'Publish Android Dev Binaries to Firebase App Distribution'
+  #   jobs: 
+  #     - job: AndroidDevDeploy
+  #       steps:
+  #         - task: FlutterInstall@0
+  #           displayName: 'Install Flutter'
+  #           inputs:
+  #             mode: 'auto'
+  #             channel: 'stable'
+  #             version: 'custom'
+  #             customVersion: 3.24.3
+  #         - script: |
+  #             flutter doctor -v
+  #             flutter clean
+  #             flutter pub get
+  #           displayName: 'Run Flutter diagnostics'
+  #         - task: DownloadSecureFile@1
+  #           name: downloadSecureFile
+  #           displayName: 'Download google-services.json'
+  #           inputs:
+  #             secureFile: 'google-services.json'
+  #         - task: DownloadSecureFile@1
+  #           name: downloadFirebaseJson
+  #           displayName: 'Download firebase.json'
+  #           inputs:
+  #             secureFile: 'firebase.json'
+  #         - task: DownloadSecureFile@1
+  #           name: downloadFirebaseOptions
+  #           displayName: 'Download firebase_options.dart'
+  #           inputs:
+  #             secureFile: 'firebase_options.dart'
+  #         - script: |
+  #             echo Installing $(downloadSecureFile.secureFilePath) to the Android apps directory...
+  #             mkdir -p $(build.sourcesDirectory)/android/app/
+  #             mv $(downloadSecureFile.secureFilePath) $(build.sourcesDirectory)/android/app/google-services.json
+  #         - script: |
+  #             echo Installing $(downloadGoogleServices.secureFilePath) to the Android app directory...
+  #             mkdir -p $(build.sourcesDirectory)/android/app/
+  #             mv $(downloadGoogleServices.secureFilePath) $(build.sourcesDirectory)/android/app/google-services.json
+
+  #             echo Installing $(downloadFirebaseJson.secureFilePath) to the root directory...
+  #             mv $(downloadFirebaseJson.secureFilePath) $(build.sourcesDirectory)/firebase.json
+
+  #             echo Installing $(downloadFirebaseOptions.secureFilePath) to the lib directory...
+  #             mkdir -p $(build.sourcesDirectory)/lib/
+  #             mv $(downloadFirebaseOptions.secureFilePath) $(build.sourcesDirectory)/lib/firebase_options.dart
+  #         - task: JavaToolInstaller@0
+  #           displayName: 'Install Java 17'
+  #           inputs:
+  #             versionSpec: '17'
+  #             jdkArchitectureOption: 'x64'
+  #             jdkSourceOption: 'PreInstalled'
+  #         - task: FlutterBuild@0
+  #           displayName: 'Build unsigned APK'
+  #           inputs:
+  #             target: apk
+  #             projectDirectory: '.'
+  #             debugMode: true
+  #             buildNumber: $(Build.BuildNumber)
+  #         - task: CopyFiles@2
+  #           displayName: 'Copy apk to artifact directory'
+  #           inputs:
+  #             contents: '**/*.apk'
+  #             targetFolder: '$(build.artifactStagingDirectory)'
+  #         - task: PublishBuildArtifacts@1
+  #           displayName: 'Publish unsigned apk as artifact'
+  #           inputs:
+  #             artifactName: 'drop'
+  #         - task: Bash@3
+  #           displayName: 'Upload to firebase app distribution'
+  #           inputs:
+  #             targetType: 'inline'
+  #             script: |
+  #               npm i -g firebase-tools
+  #               ls -la $(androidAPKDir)
+  #               firebase appdistribution:distribute '$(apkFile)' \
+  #                 --app '$(APPID)' \
+  #                 --release-notes 'Latest changes from dev branch by Azure Devops pipeline' \
+  #                 --groups 'internal-testers' \
+  #                 --token '$(FIREBASE_TOKEN)'
+  - stage: iOSDev
+    displayName: 'Publish iOS Dev IPA to Testflight'
+    jobs:
+      - job: iOSDevDeploy
+        steps:
+          - task: FlutterInstall@0
+            displayName: 'Install Flutter'
+            inputs:
+              mode: 'auto'
+              channel: 'stable'
+              version: 'custom'
+              customVersion: 3.24.3
+          - script: |
+              flutter doctor -v
+              flutter clean
+              flutter pub get
+            displayName: 'Run Flutter diagnostics'
+          - task: FlutterBuild@0
+            displayName: 'Build unsigned iOS IPA'
+            inputs:
+              target: ios
+              projectDirectory: '.'
+              debugMode: false
+              buildNumber: $(Build.BuildNumber)
+          - script: |
+              mkdir -p (build.artifactStagingDirectory)/ios
+              cp -R build/ios/ (build.artifactStagingDirectory)/ios
+            displayName: 'Copy iOS Project to Artifact Directory'
+          - task: PublishBuildArtifacts@1
+            inputs:
+              PathtoPublish: (build.artifactStagingDirectory)/ios
+              ArtifactName: 'iOSProject'
+              publishLocation: 'Container'
+            displayName: 'Publish iOS Project as Artifact'
+
