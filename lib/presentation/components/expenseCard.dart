@@ -6,9 +6,7 @@ class Expensecard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text('Extra Page'),
-      ),
+      backgroundColor: Color(0xFFF5F5F5),
       body: Center(
         child: Text('Welcome to the Extra Page!'),
       ),
