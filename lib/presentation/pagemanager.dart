@@ -25,6 +25,7 @@ class _PageManagerState extends State<PageManager> {
   ];
 
   @override
+
   void initState() {
     super.initState();
     _pageController = PageController();
@@ -43,6 +44,7 @@ class _PageManagerState extends State<PageManager> {
   }
 
   @override
+
   Widget build(BuildContext context) {
     return Scaffold(
       body: PageView(
@@ -53,6 +55,13 @@ class _PageManagerState extends State<PageManager> {
       backgroundColor: backgroundColor,
       bottomNavigationBar: BottomNav(
         activeColor: primaryColor,
+  /// The [BottomNav] allows users to switch between pages by tapping on
+  /// the icons in the navigation bar. The [onTabChange] callback uses
+  /// [_pageController.jumpToPage] to navigate to the selected page.
+  ///
+  /// The UI's background color is set to [backgroundColor], and the colors for
+  /// the active and inactive bottom navigation icons are set to [primaryColor]
+  /// and [secondaryColor], respectively.
         inactiveColor: secondaryColor,
         backgroundColor: backgroundColor,
         height: 120,
