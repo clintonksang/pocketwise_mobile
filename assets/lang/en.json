@@ -1,0 +1,109 @@
+{
+    "home":{
+        "account": "account",
+        "income": "income",
+        "balance": "balance",
+        "tracker": "tracker",
+        "no_budget": "you have not added any income", 
+        "all_pockets": "all pockets",
+        "expense": "expense",
+        "add_income": "add income",
+        "add_expense": "add expense",
+        "transactions": "transactions", 
+        "view_all": "view all",
+        "pockets": "pockets",
+        "pocket": "my pocket",
+        "budget": "budget",
+        "goodmorning": "good morning",
+        "503020": "each budget follows the 50 - 30 - 20 rule",
+        "learn_more": "learn more",
+        "goodafternoon": "good afternoon",
+        "goodevening": "good evening",
+        "i_spent": "I spent",
+        "from_pockets": "from pocket",
+        "on_date": "on date",
+        "enter_amount": "enter amount",
+        "today": "today",
+        "view_budget": "view budget",
+        "adjust_budget": "adjust"
+    },
+    "income":{
+        "income": "income",
+        "i_earn": "I earn",
+        "from_source": "from source ",       
+        "from": "type source of income",       
+        "every": "every",
+        "frequency": "select frequency",
+        "egmonthly": "e.g monthly",
+        "add_another": "add another income ",
+        "total_income": "total income"
+
+    },
+    "pockets":{ 
+        "needs": "needs",
+        "wants": "wants",
+        "debt": "debt",
+        "savings": "savings & investments",
+        "create": "create",
+        "limit": "limit",
+        "edit_limit": "edit limit",
+        "create_pocket": "create pocket",
+        "add_category": "add category",
+        "transactions": "transactions",
+        "name": "name",
+        "on": "on",
+        "status": "status",
+        "select_date": "select date",
+        "amount": "amount",
+        "total_amount": "target",
+        "target_message": "you're 50% away from hitting your target ",
+        "total_spend": "total spend",
+        "total_saved": "total saved",
+        "description": "description",
+        "add": "add",
+        "close": "close",
+        "save": "save",
+        "edit": "edit",
+        "delete": "delete",
+        "pocket_title": "pocket title",
+        "egwaterbill": "e.g water bill pocket",
+        "eg1000": "e.g 10000",
+        "category":"category",
+        "none_selected":"select a category",
+        "select": "select",
+        "fund_pocket_question": "would you like to fund pocket?",
+        "yes": "yes",
+        "no_later": "no, later",
+        "main_wallet": "main wallet",
+        "other_pockets": "other pockets",
+        "fund_pocket": "fund pocket",
+        "fund_from": "fund from",
+        "fund":"fund",
+        "water_bill_pocket": "water bill pocket"
+
+
+
+
+    },
+    "settings":{
+        "language": "language"
+    },
+    "login":{
+        "login": "login",
+        "email": "email",
+        "password": "password",
+        "forgot": "forgot password?",
+        "register": "register",
+        "remember": "remember me"
+
+
+    },
+    "register":{
+        "register": "register",
+        "name": "name",
+        "email": "email",
+        "password": "password",
+        "confirm": "confirm password",
+        "phone": "phone"
+    }
+}

@@ -1,0 +1,30 @@
+{
+  "project_info": {
+    "project_number": "284683212345",
+    "firebase_url": "https://nena-403504-default-rtdb.europe-west1.firebasedatabase.app",
+    "project_id": "nena-403504",
+    "storage_bucket": "nena-403504.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:284683212345:android:72368d1da15c0b078bdfe8",
+        "android_client_info": {
+          "package_name": "com.pocketwise.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDYO8ABxc3Y75LTwmxh25MrAutkioccaZE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
