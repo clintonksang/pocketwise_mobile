@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:pockets/presentation/profile/profile.dart';
 import 'package:pockets/utils/constants/colors.dart';
 import 'package:pockets/utils/constants/textutil.dart';
+import 'package:pockets/presentation/components/expenseCard.dart';
+import 'package:pockets/presentation/components/incomeCard.dart';
 
 import 'pockets/pockets.dart';
 import 'more/more.dart';
@@ -85,7 +87,7 @@ class BottomNav extends StatefulWidget {
 class _BottomNavState extends State<BottomNav> {
   int _selectedIndex = 0;
 
-  final List<String> _tabLabels = ['pockets', 'profile', ];
+  final List<String> _tabLabels = ['pockets', 'profile','components' ];
 
   @override
   Widget build(BuildContext context) {
