@@ -21,9 +21,14 @@ class _PageManagerState extends State<PageManager> {
   final List<Widget> _pages = [
     Pockets(),
     Profile(), 
+    Expensecard()
   ];
 
   @override
+/*************  ✨ Codeium Command ⭐  *************/
+  /// Initializes the PageController used to manage the pages in the
+  /// PageView below.
+/******  9cad7bae-9c9e-4a3e-8abb-4afdf31b53c6  *******/
   void initState() {
     super.initState();
     _pageController = PageController();
