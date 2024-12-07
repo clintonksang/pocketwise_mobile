@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
+
+import 'Databasehelper.dart';
 
 class SMSListener extends StatefulWidget {
   @override
@@ -7,24 +8,20 @@ class SMSListener extends StatefulWidget {
 }
 
 class _SMSListenerState extends State<SMSListener> {
-  static const eventChannel = EventChannel('sms_stream');
   List<String> messages = [];
+  final dbHelper = DatabaseHelper();
 
   @override
   void initState() {
     super.initState();
-    eventChannel.receiveBroadcastStream().listen(
-      (data) {
-        setState(() {
-          messages.add(data);
-        });
-      },
-      onError: (error) {
-        setState(() {
-          messages.add("Error receiving SMS: ${error.message}");
-        });
-      }
-    );
+    loadMessages();
+  }
+
+  void loadMessages() async {
+    var smsMessages = await dbHelper.messages();
+    setState(() {
+      messages = smsMessages;
+    });
   }
 
   @override
@@ -38,6 +35,11 @@ class _SMSListenerState extends State<SMSListener> {
             title: Text(messages[index]),
           );
         },
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: loadMessages,
+        tooltip: 'Refresh Messages',
+        child: Icon(Icons.refresh),
       ),
     );
   }

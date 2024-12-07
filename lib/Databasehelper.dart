@@ -1,12 +1,8 @@
-import 'package:path_provider/path_provider.dart';
 import 'package:sqflite/sqflite.dart';
-import 'dart:io';
+import 'package:path/path.dart';
 
 class DatabaseHelper {
   static Database? _database;
-  static final DatabaseHelper db = DatabaseHelper._();
-
-  DatabaseHelper._();
 
   Future<Database> get database async {
     if (_database != null) return _database!;
@@ -15,25 +11,31 @@ class DatabaseHelper {
   }
 
   initDB() async {
-    Directory documentsDirectory = await getApplicationDocumentsDirectory();
-    final path = documentsDirectory.path + 'sms.db';
-    return await openDatabase(path, version: 1, onOpen: (db) {},
-        onCreate: (Database db, int version) async {
-          await db.execute('CREATE TABLE Sms (id INTEGER PRIMARY KEY, body TEXT)');
-        });
+    return await openDatabase(
+      join(await getDatabasesPath(), 'sms_database.db'),
+      onCreate: (db, version) {
+        return db.execute(
+          "CREATE TABLE messages(id INTEGER PRIMARY KEY, text TEXT)",
+        );
+      },
+      version: 1,
+    );
   }
 
-  insertSMS(String body) async {
+  Future<void> insertMessage(String message) async {
     final db = await database;
-    final res = await db.rawInsert('INSERT INTO Sms (body) VALUES (?)', [body]);
-    return res;
+    await db.insert(
+      'messages',
+      {'text': message},
+      conflictAlgorithm: ConflictAlgorithm.replace,
+    );
   }
 
-  Future<List<String>> getAllSMS() async {
+  Future<List<String>> messages() async {
     final db = await database;
-    final res = await db.query("Sms");
-    List<String> list =
-    res.isNotEmpty ? res.map((c) => c['body'] as String).toList() : [];
-    return list;
+    final List<Map<String, dynamic>> maps = await db.query('messages');
+    return List.generate(maps.length, (i) {
+      return maps[i]['text'];
+    });
   }
 }

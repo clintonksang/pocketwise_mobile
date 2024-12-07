@@ -3,8 +3,9 @@ package com.pocketwise.app
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
-import android.os.Bundle
 import android.telephony.SmsMessage
+
+import android.util.Log
 
 class SmsReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context?, intent: Intent?) {
@@ -12,6 +13,17 @@ class SmsReceiver : BroadcastReceiver() {
         val messages = pdus?.mapNotNull { pdu ->
             SmsMessage.createFromPdu(pdu as ByteArray)
         }?.map { it.messageBody }?.joinToString(separator = "\n")
-        messages?.let { MainActivity.handleSMS(it) }
+
+        Log.d("SmsReceiver", "Received SMS: $messages")
+        if (messages != null) {
+            saveToSharedPreferences(context, messages)
+            Log.d("SmsReceiver", "Saving to SharedPreferences initiated.")
+        }
+    }
+
+    private fun saveToSharedPreferences(context: Context?, message: String) {
+        val sharedPreferences = context?.getSharedPreferences("SMSStorage", Context.MODE_PRIVATE)
+        sharedPreferences?.edit()?.putString("latest_sms", message)?.apply()
+        Log.d("SmsReceiver", "Message saved to SharedPreferences: $message")
     }
 }
