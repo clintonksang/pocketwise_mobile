@@ -3,7 +3,7 @@ import 'package:pockets/presentation/profile/profile.dart';
 import 'package:pockets/utils/constants/colors.dart';
 import 'package:pockets/utils/constants/textutil.dart';
 import 'package:pockets/presentation/components/expenseCard.dart';
-import 'package:pockets/presentation/components/incomeCard.dart';
+// import 'package:pockets/presentation/components/incomeCard.dart';
 
 import 'pockets/pockets.dart';
 import 'more/more.dart';
@@ -21,7 +21,8 @@ class _PageManagerState extends State<PageManager> {
   final List<Widget> _pages = [
     Pockets(),
     Profile(), 
-    ExpenseCard()
+    ExpenseCard(),
+    IncomeCard()
   ];
 
   @override
