@@ -8,7 +8,6 @@ import 'dart:async';
 
 // import 'package:flutter/foundation.dart';
 import 'package:google_fonts/google_fonts.dart';
-
 import 'router/approuter.dart';
 import 'utils/constants/colors.dart';
 

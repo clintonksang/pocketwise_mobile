@@ -21,7 +21,7 @@ class _PageManagerState extends State<PageManager> {
   final List<Widget> _pages = [
     Pockets(),
     Profile(), 
-    Expensecard()
+    ExpenseCard()
   ];
 
   @override
