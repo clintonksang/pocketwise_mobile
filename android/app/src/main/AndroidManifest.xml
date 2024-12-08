@@ -2,6 +2,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <uses-permission android:name="android.permission.RECEIVE_SMS"/>
     <uses-permission android:name="android.permission.READ_SMS"/>
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
 
     <application
         android:label="pockets"
@@ -29,7 +30,9 @@
         <activity
             android:name=".NotificationResponse"
             android:exported="true"
-            android:theme="@style/YourActivityTheme">
+            android:theme="@style/Theme.AppCompat.Dialog.Alert">
+
+             
             <!-- Add any intent filters if needed -->
         </activity>
 

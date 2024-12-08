@@ -25,12 +25,17 @@ class ForegroundService : Service() {
 
     override fun onStartCommand(intent: Intent, flags: Int, startId: Int): Int {
         val notificationIntent = Intent(this, FlutterActivity::class.java)
-        val pendingIntent = PendingIntent.getActivity(this, 0, notificationIntent, 0)
+        val pendingIntent = PendingIntent.getActivity(
+            this,
+            0,
+            notificationIntent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
 
         val notification = NotificationCompat.Builder(this, CHANNEL_ID)
             .setContentTitle("Service Active")
             .setContentText("Listening for SMS")
-            .setSmallIcon(R.drawable.background)
+            .setSmallIcon(R.drawable.logo)
             .setContentIntent(pendingIntent)
             .build()
 
@@ -39,6 +44,24 @@ class ForegroundService : Service() {
         // Continue to listen for SMS and other tasks
         return START_STICKY
     }
+
+
+//    override fun onStartCommand(intent: Intent, flags: Int, startId: Int): Int {
+//        val notificationIntent = Intent(this, FlutterActivity::class.java)
+//        val pendingIntent = PendingIntent.getActivity(this, 0, notificationIntent, 0)
+//
+//        val notification = NotificationCompat.Builder(this, CHANNEL_ID)
+//            .setContentTitle("Service Active")
+//            .setContentText("Listening for SMS")
+//            .setSmallIcon(R.drawable.logo)
+//            .setContentIntent(pendingIntent)
+//            .build()
+//
+//        startForeground(1, notification)
+//
+//        // Continue to listen for SMS and other tasks
+//        return START_STICKY
+//    }
 
     override fun onBind(intent: Intent?): IBinder? {
         return null

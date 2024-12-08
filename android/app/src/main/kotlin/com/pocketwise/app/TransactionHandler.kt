@@ -29,8 +29,7 @@ class TransactionHandler(private val context: Context) {
                 val recipient = expenseMatchResult.groupValues[3].trim()
                 Log.d("TransactionHandler", "Expense: Amount: $amount, To: $recipient")
                 saveToSharedPreferences("Expense: $amount to $recipient")
-                notificationHandler.showExpenseNotification(amount, recipient, "Which category would you like to add this Expense to?")
-            }
+                notificationHandler.showExpenseNotification(amount, recipient, "Add KSH $amount expense to which category?")            }
             else -> Log.d("TransactionHandler", "No transaction detected in message")
         }
     }

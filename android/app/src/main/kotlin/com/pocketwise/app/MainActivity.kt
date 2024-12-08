@@ -38,13 +38,14 @@ class MainActivity : FlutterActivity() {
         super.onCreate(savedInstanceState)
         createNotificationChannel()
         checkAndRequestPermissions()
+        requestNotificationPermission()
     }
 
     private fun createNotificationChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val name = "Income Expense Channel"
             val descriptionText = "Notifications for income and expense management"
-            val importance = NotificationManager.IMPORTANCE_DEFAULT
+            val importance = NotificationManager.IMPORTANCE_HIGH
             val channel = NotificationChannel("income_expense_channel", name, importance).apply {
                 description = descriptionText
             }
@@ -66,4 +67,21 @@ class MainActivity : FlutterActivity() {
             }
         }
     }
+
+    private fun requestNotificationPermission() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            val permissionsToRequest = mutableListOf<String>()
+
+
+
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU && checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+                permissionsToRequest.add(android.Manifest.permission.POST_NOTIFICATIONS)
+            }
+
+            if (permissionsToRequest.isNotEmpty()) {
+                requestPermissions(permissionsToRequest.toTypedArray(), SMS_PERMISSION_REQUEST_CODE)
+            }
+        }
+    }
+
 }
