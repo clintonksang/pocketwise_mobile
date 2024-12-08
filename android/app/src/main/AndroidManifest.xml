@@ -1,3 +1,4 @@
+<?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <uses-permission android:name="android.permission.RECEIVE_SMS"/>
     <uses-permission android:name="android.permission.READ_SMS"/>
@@ -5,7 +6,8 @@
     <application
         android:label="pockets"
         android:name="${applicationName}"
-        android:icon="@mipmap/ic_launcher">
+        android:icon="@mipmap/ic_launcher"
+        android:theme="@style/AppTheme">
         <activity
             android:name=".MainActivity"
             android:exported="true"
@@ -24,14 +26,24 @@
                 android:resource="@style/NormalTheme"/>
         </activity>
 
-        <receiver android:name=".SmsReceiver" android:exported="true">
+        <activity
+            android:name=".NotificationResponse"
+            android:exported="true"
+            android:theme="@style/YourActivityTheme">
+            <!-- Add any intent filters if needed -->
+        </activity>
+
+        <receiver
+            android:name=".SmsReceiver"
+            android:exported="true">
             <intent-filter>
                 <action android:name="android.provider.Telephony.SMS_RECEIVED"/>
             </intent-filter>
         </receiver>
 
-        <!-- TransactionReceiver to handle notification actions -->
-        <receiver android:name=".TransactionReceiver" android:exported="true">
+        <receiver
+            android:name=".TransactionReceiver"
+            android:exported="true">
             <intent-filter>
                 <action android:name="ADD_INCOME"/>
                 <action android:name="ADD_EXPENSE"/>
