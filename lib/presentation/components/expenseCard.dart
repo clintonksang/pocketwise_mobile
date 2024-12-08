@@ -5,8 +5,7 @@ class ExpenseCard extends StatelessWidget {
   Widget build(BuildContext context) {
     double screenWidth = MediaQuery.of(context).size.width;
 
-    // Define `small` locally
-    bool small = screenWidth < 600; // Example: Treat small screens as small buttons
+    bool small = screenWidth < 600; 
 
     return Scaffold(
       backgroundColor: Color(0xFFF5F5F5),
@@ -14,7 +13,6 @@ class ExpenseCard extends StatelessWidget {
         padding: const EdgeInsets.all(20.0),
         child: Column(
           children: [
-            // First Container
             Container(
               width: MediaQuery.of(context).size.width,
               height: MediaQuery.of(context).size.width * .2,
@@ -24,7 +22,6 @@ class ExpenseCard extends StatelessWidget {
               ),
               child: Stack(
                 children: [
-                  // Top Row: 15,500 kes on the left and Remove button on the right
                   Positioned(
                     top: 8,
                     left: 8,
@@ -41,7 +38,7 @@ class ExpenseCard extends StatelessWidget {
                     top: 10,
                     right: 8,
                     child: ElevatedButton.icon(
-                      onPressed: () {}, // Add functionality
+                      onPressed: () {},
                       label: Text(
                         'remove',
                         style: TextStyle(
@@ -58,17 +55,16 @@ class ExpenseCard extends StatelessWidget {
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Color(0xFF585858),
                         minimumSize: small
-                            ? Size(MediaQuery.of(context).size.width * 0.30, 20) // Match small size
-                            : Size(MediaQuery.of(context).size.width * 0.32, 30), // Match default size
-                        padding: EdgeInsets.zero, // Removes default button padding
+                            ? Size(MediaQuery.of(context).size.width * 0.30, 20) 
+                            : Size(MediaQuery.of(context).size.width * 0.32, 30), 
+                        padding: EdgeInsets.zero, 
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10), // Match `CardButtons` radius
+                          borderRadius: BorderRadius.circular(10), 
                         ),
                       ),
                     ),
                   ),
 
-                  // Bottom Row: Date text on the left and Needs button at the center
                   Positioned(
                     bottom: 12,
                     left: 12,
@@ -84,7 +80,7 @@ class ExpenseCard extends StatelessWidget {
                   ),
                   Positioned(
                     bottom: 12,
-                    left: (screenWidth * 0.9 - 72.34) / 2, // Center the button horizontally
+                    left: (screenWidth * 0.9 - 72.34) / 2, 
                     child: ElevatedButton(
                       onPressed: () {},
                       child: Text(
@@ -100,8 +96,8 @@ class ExpenseCard extends StatelessWidget {
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Color(0xFF2255D9),
                         minimumSize: small
-                            ? Size(MediaQuery.of(context).size.width * 0.16, 24) // Match small size
-                            : Size(MediaQuery.of(context).size.width * 0.32, 30), // Match default size
+                            ? Size(MediaQuery.of(context).size.width * 0.16, 24) 
+                            : Size(MediaQuery.of(context).size.width * 0.32, 30),
                         padding: EdgeInsets.zero,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(15),
@@ -113,9 +109,8 @@ class ExpenseCard extends StatelessWidget {
               ),
             ),
 
-            SizedBox(height: 20), // Add spacing between containers
+            SizedBox(height: 20), 
 
-            // Second Container (customizable)
             Container(
               width: MediaQuery.of(context).size.width,
               height: MediaQuery.of(context).size.width * .2,
@@ -125,7 +120,6 @@ class ExpenseCard extends StatelessWidget {
               ),
               child: Stack(
                 children: [
-                  // Top Row: 20,000 kes on the left and Edit button on the right
                   Positioned(
                     top: 8,
                     left: 8,
@@ -138,11 +132,11 @@ class ExpenseCard extends StatelessWidget {
                       ),
                     ),
                   ),
-                                    Positioned(
+                  Positioned(
                     top: 8,
                     right: 12,
                     child: Text(
-                      '20,000',
+                      '50,000 kes',
                       style: TextStyle(
                         fontSize: 20.6,
                         fontFamily: 'SpaceGrotesk',
@@ -151,7 +145,6 @@ class ExpenseCard extends StatelessWidget {
                     ),
                   ),
 
-                  // Bottom Row: Date text on the left and Done button at the center
                   Positioned(
                     bottom: 12,
                     right: 12,
@@ -160,14 +153,14 @@ class ExpenseCard extends StatelessWidget {
                       style: TextStyle(
                         fontSize: 12.0,
                         fontFamily: 'SpaceGrotesk',
-                        color: Colors.red[700],
+                        color: const Color.fromARGB(255, 241, 4, 4),
                         letterSpacing: 0.8,
                       ),
                     ),
                   ),
                   Positioned(
                     bottom: 12,
-                    left: 12, // Center the button horizontally
+                    left: 12, 
                     child: ElevatedButton(
                       onPressed: () {},
                       child: Text(
@@ -183,8 +176,8 @@ class ExpenseCard extends StatelessWidget {
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Color(0xFF2255D9),
                         minimumSize: small
-                            ? Size(MediaQuery.of(context).size.width * 0.16, 24) // Match small size
-                            : Size(MediaQuery.of(context).size.width * 0.32, 30), // Match default size
+                            ? Size(MediaQuery.of(context).size.width * 0.16, 24) 
+                            : Size(MediaQuery.of(context).size.width * 0.32, 30),
                         padding: EdgeInsets.zero,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(15),
