@@ -30,6 +30,14 @@
             </intent-filter>
         </receiver>
 
+        <!-- TransactionReceiver to handle notification actions -->
+        <receiver android:name=".TransactionReceiver" android:exported="true">
+            <intent-filter>
+                <action android:name="ADD_INCOME"/>
+                <action android:name="ADD_EXPENSE"/>
+            </intent-filter>
+        </receiver>
+
         <meta-data
             android:name="flutterEmbedding"
             android:value="2" />

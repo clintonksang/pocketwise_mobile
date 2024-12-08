@@ -53,9 +53,24 @@ class MyApp extends StatefulWidget {
 
 class _MyAppState extends State<MyApp> {
   @override
+  List<String> messages = [];
+  static const EventChannel _smsChannel = EventChannel('sms_stream');
+
+  @override
   void initState() {
     super.initState();
     requestPermissions();
+    _listenToSMS();
+  }
+
+  void _listenToSMS() {
+    _smsChannel.receiveBroadcastStream().listen((dynamic message) {
+      setState(() {
+        messages.insert(0, message.toString()); // Add new messages at the top
+      });
+    }, onError: (dynamic error) {
+      print('Received error: ${error}');
+    });
   }
 
   Future<void> requestPermissions() async {

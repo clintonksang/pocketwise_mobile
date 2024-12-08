@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
-
-import 'Databasehelper.dart';
+import 'package:flutter/services.dart';
 
 class SMSListener extends StatefulWidget {
   @override
@@ -9,18 +8,21 @@ class SMSListener extends StatefulWidget {
 
 class _SMSListenerState extends State<SMSListener> {
   List<String> messages = [];
-  final dbHelper = DatabaseHelper();
+  static const EventChannel _smsChannel = EventChannel('sms_stream');
 
   @override
   void initState() {
     super.initState();
-    loadMessages();
+    _listenToSMS();
   }
 
-  void loadMessages() async {
-    var smsMessages = await dbHelper.messages();
-    setState(() {
-      messages = smsMessages;
+  void _listenToSMS() {
+    _smsChannel.receiveBroadcastStream().listen((dynamic message) {
+      setState(() {
+        messages.insert(0, message.toString()); // Add new messages at the top
+      });
+    }, onError: (dynamic error) {
+      print('Received error: ${error}');
     });
   }
 
@@ -28,18 +30,18 @@ class _SMSListenerState extends State<SMSListener> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: Text("SMS Listener")),
-      body: ListView.builder(
+      body: messages.isEmpty
+          ? Center(child: Text("No messages received"))
+          : ListView.builder(
         itemCount: messages.length,
         itemBuilder: (context, index) {
           return ListTile(
-            title: Text(messages[index]),
+            title: Text(
+                messages[index],
+                style: TextStyle(color: Colors.black)
+            ),
           );
         },
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: loadMessages,
-        tooltip: 'Refresh Messages',
-        child: Icon(Icons.refresh),
       ),
     );
   }
