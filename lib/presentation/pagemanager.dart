@@ -22,7 +22,7 @@ class _PageManagerState extends State<PageManager> {
     Pockets(),
     Profile(), 
     ExpenseCard(),
-    IncomeCard()
+    // IncomeCard()
   ];
 
   @override
