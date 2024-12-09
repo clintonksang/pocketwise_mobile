@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:pockets/presentation/profile/profile.dart';
 import 'package:pockets/utils/constants/colors.dart';
 import 'package:pockets/utils/constants/textutil.dart';
-import 'package:pockets/presentation/components/expenseCard.dart';
+import 'package:pockets/presentation/components/expensePage.dart';
 // import 'package:pockets/presentation/components/incomeCard.dart';
 
 import 'pockets/pockets.dart';
@@ -20,13 +20,13 @@ class _PageManagerState extends State<PageManager> {
 
   final List<Widget> _pages = [
     Pockets(),
-    Profile(), 
-    ExpenseCard(),
+    Profile(),
+    ExpensePage()
+    // ExpenseCard(title:'20,000'),
     // IncomeCard()
   ];
 
   @override
-
   void initState() {
     super.initState();
     _pageController = PageController();
@@ -45,7 +45,6 @@ class _PageManagerState extends State<PageManager> {
   }
 
   @override
-
   Widget build(BuildContext context) {
     return Scaffold(
       body: PageView(
@@ -56,13 +55,14 @@ class _PageManagerState extends State<PageManager> {
       backgroundColor: backgroundColor,
       bottomNavigationBar: BottomNav(
         activeColor: primaryColor,
-  /// The [BottomNav] allows users to switch between pages by tapping on
-  /// the icons in the navigation bar. The [onTabChange] callback uses
-  /// [_pageController.jumpToPage] to navigate to the selected page.
-  ///
-  /// The UI's background color is set to [backgroundColor], and the colors for
-  /// the active and inactive bottom navigation icons are set to [primaryColor]
-  /// and [secondaryColor], respectively.
+
+        /// The [BottomNav] allows users to switch between pages by tapping on
+        /// the icons in the navigation bar. The [onTabChange] callback uses
+        /// [_pageController.jumpToPage] to navigate to the selected page.
+        ///
+        /// The UI's background color is set to [backgroundColor], and the colors for
+        /// the active and inactive bottom navigation icons are set to [primaryColor]
+        /// and [secondaryColor], respectively.
         inactiveColor: secondaryColor,
         backgroundColor: backgroundColor,
         height: 120,
@@ -73,7 +73,6 @@ class _PageManagerState extends State<PageManager> {
     );
   }
 }
-
 
 class BottomNav extends StatefulWidget {
   final Color activeColor;
@@ -98,7 +97,7 @@ class BottomNav extends StatefulWidget {
 class _BottomNavState extends State<BottomNav> {
   int _selectedIndex = 0;
 
-  final List<String> _tabLabels = ['pockets', 'profile','components' ];
+  final List<String> _tabLabels = ['pockets', 'profile', 'components'];
 
   @override
   Widget build(BuildContext context) {
@@ -109,7 +108,7 @@ class _BottomNavState extends State<BottomNav> {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceAround,
           children: List.generate(_tabLabels.length, (index) {
-            return Expanded(      
+            return Expanded(
               child: GestureDetector(
                 onTap: () {
                   setState(() {
