@@ -344,7 +344,7 @@ class _PocketsState extends State<Pockets> {
                           padding: const EdgeInsets.all(8.0),
                           child: selectedButtonText == 'budget'
                               ? BudgetCard(
-                                
+                                hasBudget : false
                               )
                               : 
                               ListView.builder(

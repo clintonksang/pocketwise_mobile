@@ -18,10 +18,10 @@ import '../../../../repository/budget.repo.dart';
 import '../../../constants/colors.dart';
 import '../../../constants/formatting.dart';
 class BudgetCard extends StatefulWidget {
- 
+ final bool hasBudget;
   
   BudgetCard({
-   
+   required this.hasBudget,
     super.key
   });
 
@@ -31,7 +31,7 @@ class BudgetCard extends StatefulWidget {
 
 class _BudgetCardState extends State<BudgetCard> {
   Color progressColor = greencolor;
-  bool hasBudget = false;
+  
  
 
   @override
@@ -41,7 +41,7 @@ class _BudgetCardState extends State<BudgetCard> {
     //  final budgetRepository = Provider.of<BudgetRepository>(context);
  final IncomeProvider incomeProvider = Provider.of<IncomeProvider>(context);
    
-    if (hasBudget) {
+    if (!widget.hasBudget) {
        
       return Expanded(
         child: Container(

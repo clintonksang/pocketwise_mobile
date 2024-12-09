@@ -3,9 +3,13 @@ import 'package:logger/web.dart';
 import 'package:pocketwise/models/budget.model.dart';
 import 'package:pocketwise/models/categories.model.dart';
 import 'package:pocketwise/models/pocket.model.dart';
+import 'package:pocketwise/presentation/authentication/phonescreen.dart';
 import 'package:pocketwise/presentation/pockets/add_expense.dart';
 import 'package:pocketwise/presentation/pockets/view_expense.dart';
 import 'package:pocketwise/utils/widgets/pockets/budget/view_budget.dart';
+import '../presentation/authentication/EnterKYCscreen.dart';
+import '../presentation/authentication/OTPScreen.dart';
+import '../presentation/authentication/login.dart';
 import '../presentation/pockets/add_income.dart';
 import '../presentation/pockets/pockets.dart';
 import '../presentation/pagemanager.dart';
@@ -19,6 +23,12 @@ class AppRouter {
   static const String viewCategory = "/viewCategory";
   static const String viewBudget = "/viewBudget";
   static const String addExpense = "/addExpense";
+  static const String phone = "/phone";
+  static const String login = "/login";
+  static const String otpscreen = "/otpscreen";
+  static const String kycpage = "/kycpage";
+  static const String pagemanager = "/pagemanager";
+
 
   static Route<dynamic> onGenerateRoute(RouteSettings settings) {
     final args = settings.arguments;
@@ -27,7 +37,18 @@ class AppRouter {
 
     switch (settings.name) {
       case initial:
+        return _slideRoute(PhoneScreen());
+      case pagemanager:
         return _slideRoute(PageManager());
+      case phone:
+        return _slideRoute(PhoneScreen());
+      case login:
+        return _slideRoute(Login());
+    
+      case otpscreen:
+      return _slideRoute(OtpScreen());
+      case kycpage:
+      return _slideRoute(EnterKYCPage());
       case add_income:
         return _slideRoute(AddIncome());
       case viewPocket:
