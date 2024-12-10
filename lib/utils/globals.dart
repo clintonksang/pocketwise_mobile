@@ -12,3 +12,18 @@ ExpenseRepository expenseRepository = ExpenseRepository();
 IncomeRepository incomeRepository = IncomeRepository();
 
 
+class PocketWiseLogo extends StatelessWidget {
+  const PocketWiseLogo({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return  Align(
+                  alignment: Alignment.topCenter,
+                  child: Container(
+                    width: 50,
+                    height: 50,
+                    child: Image.asset('assets/images/logobg.png') ,
+                  ),
+                );
+  }
+}

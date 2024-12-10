@@ -1,5 +1,6 @@
 {
     "home":{
+        "pocketwise": "pocketwise",
         "account": "account",
         "income": "income",
         "balance": "balance",
@@ -26,7 +27,8 @@
         "today": "today",
         "view_budget": "view budget",
         "adjust_budget": "adjust",
-        "continue": "continue"
+        "continue": "continue",
+        "get_started": "get started"
     },
     "income":{
         "income": "income",

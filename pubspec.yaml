@@ -47,6 +47,7 @@ dependencies:
   sms_autofill: ^2.4.1
   sqflite: ^2.0.0+4
   tutorial_coach_mark: ^1.2.12
+  video_player: ^2.9.2
 
 dev_dependencies:
   android_notification_icons:
@@ -90,3 +91,4 @@ flutter:
     - assets/lang/en.json
     - assets/lang/sw.json
     - assets/images/
+    - assets/videos/

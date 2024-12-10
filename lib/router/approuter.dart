@@ -4,6 +4,7 @@ import 'package:pocketwise/models/budget.model.dart';
 import 'package:pocketwise/models/categories.model.dart';
 import 'package:pocketwise/models/pocket.model.dart';
 import 'package:pocketwise/presentation/authentication/phonescreen.dart';
+import 'package:pocketwise/presentation/launcherpage.dart';
 import 'package:pocketwise/presentation/pockets/add_expense.dart';
 import 'package:pocketwise/presentation/pockets/view_expense.dart';
 import 'package:pocketwise/utils/widgets/pockets/budget/view_budget.dart';
@@ -37,7 +38,7 @@ class AppRouter {
 
     switch (settings.name) {
       case initial:
-        return _slideRoute(PhoneScreen());
+        return _slideRoute(Launcher());
       case pagemanager:
         return _slideRoute(PageManager());
       case phone:
