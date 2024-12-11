@@ -36,7 +36,9 @@ class AuthPageManager extends StatelessWidget {
                 children: [
                   const SizedBox(height: 50),
                   // LOGO
-                  PocketWiseLogo(),
+                  PocketWiseLogo(
+                    darkMode: false,
+                  ),
 
                   const SizedBox(height: 50),
 

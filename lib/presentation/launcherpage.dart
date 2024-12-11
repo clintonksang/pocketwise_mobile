@@ -18,33 +18,66 @@ class Launcher extends StatefulWidget {
 }
 
 class _LauncherState extends State<Launcher> {
+  late VideoPlayerController _controller;
+  late Future<void> _initializeVideoPlayerFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = VideoPlayerController.asset("assets/videos/intro.mp4");
+    _initializeVideoPlayerFuture = _controller.initialize().then((_) {
+      setState(() {
+        _controller.setLooping(true);
+        _controller.play();
+        print("Video initialized and playing");
+      });
+    });
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: black,
       body: Stack(
         children: [
-          
-         
           Positioned(
-             bottom: 50,
-            top: 0,
-            left: 0,
-            right: 0,
-            child: VideoPlayerScreen()),
-           Positioned(
+              bottom: 50,
+              top: 0,
+              left: 0,
+              right: 0,
+              child: FutureBuilder(
+                future: _initializeVideoPlayerFuture,
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.done) {
+                    return AspectRatio(
+                      aspectRatio: _controller.value.aspectRatio,
+                      child: VideoPlayer(_controller),
+                    );
+                  } else {
+                    return const Center(
+                      child: CircularProgressIndicator(),
+                    );
+                  }
+                },
+              )),
+          Positioned(
             bottom: 0,
             left: 0,
             right: 0,
             child: Container(
-                height: MediaQuery.of(context).size.height,
+              height: MediaQuery.of(context).size.height,
               decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [black.withOpacity(0.2), black],
-                )
-              ),
+                  gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [black.withOpacity(0.2), black.withOpacity(0.8)],
+              )),
             ),
           ),
           Positioned(
@@ -53,43 +86,62 @@ class _LauncherState extends State<Launcher> {
             right: defaultPadding,
             child: Column(
               children: [
-                 Positioned(
-            top: 50,
-            left: defaultPadding,
-            right: defaultPadding,
-            child: Column(
-              children: [
-               
-                Text("pocketwise".tr(), style: AppTextStyles.largeBold.copyWith(color: white),)
-              ],
-            )
-          ),  SizedBox(height: defaultPadding,),
+                SizedBox(
+                  height: defaultPadding,
+                ),
                 Customelevatedbutton(
-                  // textcolor: white,
-                  color: white,
-                  text: "login.login".tr(), onPressed:(){
-                  Navigator.pushNamed(context, AppRouter.login);
-                } ),
-                SizedBox(height: 10,),
+                    // textcolor: white,
+                    color: white,
+                    text: "login.login".tr(),
+                    onPressed: () {
+                      _controller.pause();
+                      Navigator.pushNamed(context, AppRouter.login);
+                    }),
+                SizedBox(
+                  height: 10,
+                ),
                 Customelevatedbutton(
-                  textcolor: white,
-                  text: "register.register".tr(), onPressed:(){
-                  Navigator.pushNamed(context, AppRouter.phone);
-                } ),
+                    textcolor: white,
+                    text: "register.register".tr(),
+                    onPressed: () {
+                      _controller.pause();
+                      Navigator.pushNamed(context, AppRouter.phone);
+                    }),
               ],
             ),
           ),
-           Positioned(
-            top: 50,
-            left: defaultPadding,
-            right: defaultPadding,
-            child: Column(
-              children: [
-                PocketWiseLogo(),
-                Text("pocketwise".tr(), style: AppTextStyles.largeBold.copyWith(color: white),)
-              ],
-            )
-          ),
+          Positioned(
+              top: 50,
+              left: defaultPadding,
+              right: defaultPadding,
+              child: Column(
+                children: [
+                  PocketWiseLogo(
+                    darkMode: true,
+                  ),
+                  Text(
+                    "pocketwise".tr(),
+                    style: AppTextStyles.largeBold.copyWith(color: white),
+                  )
+                ],
+              )),
+
+          // Positioned(
+          //     top: 60,
+          //     left: defaultPadding,
+          //     right: defaultPadding,
+          //     child: Column(
+          //       children: [
+          //         PocketWiseLogo(
+          //           darkMode: true,
+          //         ),
+          //         Text(
+          //           "spend wisely".tr(),
+          //           style:
+          //               AppTextStyles.normal.copyWith(color: Color(0XffB980EF)),
+          //         )
+          //       ],
+          //     )),
           //   Positioned(
           //   top: 60,
           //   left: defaultPadding,
@@ -98,60 +150,6 @@ class _LauncherState extends State<Launcher> {
           // ),
         ],
       ),
-    );
-  }
-}
-
-class VideoPlayerScreen extends StatefulWidget {
-  const VideoPlayerScreen({super.key});
-
-  @override
-  State<VideoPlayerScreen> createState() => _VideoPlayerScreenState();
-}
-
-class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
-  late VideoPlayerController _controller;
-  late Future<void> _initializeVideoPlayerFuture;
-
-  @override
-  void initState() {
-    super.initState();
-    // Initialize the VideoPlayerController with your asset video
-    _controller = VideoPlayerController.asset("assets/videos/intro.mp4");
-
-    // Prepare the video for playback
-    _initializeVideoPlayerFuture = _controller.initialize().then((_) {
-      setState(() {
-        _controller.setLooping(true);
-        _controller.play(); // Start playing the video automatically
-      });
-    });
-  }
-
-  @override
-  void dispose() {
-    // Ensure disposing of the VideoPlayerController to free up resources
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-
-    return FutureBuilder(
-      future: _initializeVideoPlayerFuture,
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.done) {
-          return AspectRatio(
-            aspectRatio: _controller.value.aspectRatio,
-            child: VideoPlayer(_controller),
-          );
-        } else {
-          return const Center(
-            child: CircularProgressIndicator(),
-          );
-        }
-      },
     );
   }
 }

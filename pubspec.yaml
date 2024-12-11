@@ -37,6 +37,7 @@ dependencies:
   flutter:
     sdk: flutter
   flutter_expandable_fab: ^2.3.0
+  flutter_svg: ^2.0.16
   google_fonts: ^6.2.1
   intl_phone_field: ^3.2.0
   logger: ^2.4.0
