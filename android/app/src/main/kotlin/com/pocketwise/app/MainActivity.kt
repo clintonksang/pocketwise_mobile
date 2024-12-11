@@ -8,8 +8,10 @@ import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.EventChannel
 import android.content.pm.PackageManager
+import io.flutter.plugin.common.MethodChannel
 
 class MainActivity : FlutterActivity() {
+    private val CHANNEL = "com.pocketwise.app/simulator"
     companion object {
         private var eventSink: EventChannel.EventSink? = null
         private const val SMS_PERMISSION_REQUEST_CODE = 101 // This is the line you're missing
@@ -32,14 +34,24 @@ class MainActivity : FlutterActivity() {
                 }
             }
         )
+        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, CHANNEL).setMethodCallHandler { call, result ->
+            if (call.method == "simulateTransaction") {
+                val message = call.argument<String>("message")
+                simulateTransaction(message, result)
+            } else {
+                result.notImplemented()
+            }
+        }
     }
 
+// ADDITIONAL FUNCTIONS TO PLAY AROUND
     override fun onCreate(savedInstanceState: android.os.Bundle?) {
         super.onCreate(savedInstanceState)
         createNotificationChannel()
         checkAndRequestPermissions()
         requestNotificationPermission()
-    }
+        simulateIncomingSMS()
+}
 
     private fun createNotificationChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -81,6 +93,21 @@ class MainActivity : FlutterActivity() {
             if (permissionsToRequest.isNotEmpty()) {
                 requestPermissions(permissionsToRequest.toTypedArray(), SMS_PERMISSION_REQUEST_CODE)
             }
+        }
+    }
+//TODO: DELETE ALL THESE TWO IN PROD
+    private fun simulateIncomingSMS() {
+        // Simulating an SMS receive
+        val simulatedMessage = "SL71JZ3A6D Confirmed.You have received Ksh400.00 from Absa Bank Kenya PLC. 303031 on 7/12/24 at 12:01 PM New M-PESA balance is Ksh454.87."
+        val transactionHandler = TransactionHandler(this)
+        transactionHandler.handleTransactionMessage(simulatedMessage)
+    }
+    private fun simulateTransaction(message: String?, result: MethodChannel.Result) {
+        if (message != null) {
+            println("Simulating transaction with message: $message")
+            result.success("Transaction simulated with message: $message")
+        } else {
+            result.error("ERROR", "No message received for simulation.", null)
         }
     }
 

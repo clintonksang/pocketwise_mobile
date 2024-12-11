@@ -32,9 +32,9 @@ void main() {
       useFallbackTranslations: true,
       child: MultiProvider(
         providers: [
-        ChangeNotifierProvider(create: (context) => IncomeProvider()),
-        ChangeNotifierProvider(create: (context) => BudgetRepository()),
-        ChangeNotifierProvider(create: (context) => BudgetLimits()),
+          ChangeNotifierProvider(create: (context) => IncomeProvider()),
+          ChangeNotifierProvider(create: (context) => BudgetRepository()),
+          ChangeNotifierProvider(create: (context) => BudgetLimits()),
           ChangeNotifierProvider(create: (_) => DropdownProvider()),
           ChangeNotifierProvider(create: (_) => CategoryProvider()),
         ],
@@ -43,7 +43,7 @@ void main() {
     ));
   }, (dynamic error, dynamic stack) {});
 }
- 
+
 class MyApp extends StatefulWidget {
   const MyApp({super.key});
 
@@ -74,15 +74,25 @@ class _MyAppState extends State<MyApp> {
   }
 
   Future<void> requestPermissions() async {
-    final status = await Permission.sms.status;
-    if (!status.isGranted) {
-      final result = await Permission.sms.request();
-      if (result.isGranted) {
-        // Permission granted
+    // Request SMS permission
+    final smsStatus = await Permission.sms.status;
+    if (!smsStatus.isGranted) {
+      final smsResult = await Permission.sms.request();
+      if (smsResult.isGranted) {
         print("SMS Permission granted");
-      } else if (result.isPermanentlyDenied) {
-        // The user opted not to grant permission and chose not to be asked again (Android).
-        // You can open app settings here if you want to let your user manually enable permissions.
+      } else if (smsResult.isPermanentlyDenied) {
+        openAppSettings(); // Open app settings if permission is permanently denied
+      }
+    }
+
+    // Request notification permission
+    final notificationStatus = await Permission.notification.status;
+    if (!notificationStatus.isGranted) {
+      final notificationResult = await Permission.notification.request();
+      if (notificationResult.isGranted) {
+        print("Notification Permission granted");
+      } else if (notificationResult.isPermanentlyDenied) {
+        print("Notification Permission permanently denied");
         openAppSettings();
       }
     }
@@ -100,10 +110,8 @@ class _MyAppState extends State<MyApp> {
       locale: context.locale,
       theme: ThemeData(
         primaryColor: primaryColor,
-        fontFamily: 'SpaceGrotesk',  
+        fontFamily: 'SpaceGrotesk',
       ),
     );
   }
 }
-
-
