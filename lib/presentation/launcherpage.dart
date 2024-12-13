@@ -24,6 +24,8 @@ class _LauncherState extends State<Launcher> {
   @override
   void initState() {
     super.initState();
+    simulateExpense(""); // IF USER IS NOT LOGGED IN, SET USERID TO EMPTY
+
     _controller = VideoPlayerController.asset("assets/videos/intro.mp4");
     _initializeVideoPlayerFuture = _controller.initialize().then((_) {
       setState(() {

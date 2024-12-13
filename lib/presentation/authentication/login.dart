@@ -2,6 +2,7 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../router/approuter.dart';
+import '../../utils/globals.dart';
 import '../../utils/widgets/authentication/authpages.dart';
 import '../../utils/widgets/authentication/phoneField.dart';
 import '../../utils/widgets/pockets/textfield.dart';
@@ -15,18 +16,6 @@ class Login extends StatefulWidget {
 
 class _LoginState extends State<Login> {
 // simulate mpesa transaction
-  static const platform = MethodChannel('com.pocketwise.app/simulator');
-
-  Future<void> simulateExpense() async {
-    try {
-      final String userId = "12345"; // This should be dynamically assigned
-      final String result =
-          await platform.invokeMethod('simulateExpenseSMS', {'USERID': userId});
-      print(result);
-    } on PlatformException catch (e) {
-      print("Failed to invoke method: '${e.message}'.");
-    }
-  }
 
   final phoneController = TextEditingController();
   final passwordController = TextEditingController();
@@ -37,7 +26,7 @@ class _LoginState extends State<Login> {
       pagetitle: 'login.login'.tr(),
       onButtonPressed: () {
         //  SIMULATE HERE
-        simulateExpense();
+        simulateExpense("TESTUSERID122");
         // Navigator.pushNamed(context, AppRouter.pagemanager);
       },
       buttontext: 'login.login'.tr(),
