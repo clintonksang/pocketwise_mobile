@@ -1,6 +1,7 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:logger/logger.dart';
 import '../../router/approuter.dart';
 import '../../utils/globals.dart';
 import '../../utils/widgets/authentication/authpages.dart';
@@ -15,7 +16,22 @@ class Login extends StatefulWidget {
 }
 
 class _LoginState extends State<Login> {
-// simulate mpesa transaction
+  String userId = "";
+  @override
+  void initState() {
+    // TODO: implement initState
+    super.initState();
+    getUserId();
+
+    simulateExpense(userId);
+  }
+
+  getUserId() async {
+    setState(() {
+      userId = "TESTUSERID122";
+    });
+  }
+
 
   final phoneController = TextEditingController();
   final passwordController = TextEditingController();

@@ -4,6 +4,8 @@ import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.content.Context
 import android.content.pm.PackageManager
+import android.media.AudioAttributes
+import android.net.Uri
 import android.os.Build
 import android.util.Log
 import io.flutter.embedding.android.FlutterActivity
@@ -65,8 +67,9 @@ class MainActivity : FlutterActivity() {
                 result ->
             if (call.method == "simulateExpenseSMS") {
                 val userId = call.argument<String>("USERID") ?: "Unknown User"
-                simulateExpenseSMS(userId)
+
                 saveUserId(userId)
+                simulateExpenseSMS(userId)
                 result.success("Expense simulation triggered for User ID: $userId")
             } else {
                 result.notImplemented()
@@ -89,9 +92,17 @@ class MainActivity : FlutterActivity() {
             val name = "Income Expense Channel"
             val descriptionText = "Notifications for income and expense management"
             val importance = NotificationManager.IMPORTANCE_HIGH
+            val soundUri = Uri.parse("android.resource://${packageName}/raw/notification_tone")
+            // Create an AudioAttributes instance.
+            val audioAttributes =
+                    AudioAttributes.Builder()
+                            .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+                            .setUsage(AudioAttributes.USAGE_NOTIFICATION)
+                            .build()
             val channel =
                     NotificationChannel("income_expense_channel", name, importance).apply {
                         description = descriptionText
+                        setSound(soundUri, audioAttributes)
                     }
             val notificationManager: NotificationManager =
                     getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
@@ -156,8 +167,9 @@ class MainActivity : FlutterActivity() {
             putString("userId", userId)
             apply()
         }
+        Log.d("MainActivity", "User ID saved: $userId")
     }
-    
+
     // private fun simulateTransaction(message: String?, result: MethodChannel.Result) {
     //     if (message != null) {
     //         println("Simulating transaction with message: $message")

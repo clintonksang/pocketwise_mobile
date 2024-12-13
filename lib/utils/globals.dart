@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:logger/logger.dart';
 import 'package:pocketwise/repository/income.repo.dart';
 import 'package:provider/provider.dart';
 
@@ -35,16 +36,15 @@ class PocketWiseLogo extends StatelessWidget {
           );
   }
 }
- 
-  Future<void> simulateExpense(userID) async {
-   const platform = MethodChannel('com.pocketwise.app/simulator');
 
-    try {
-      
-      final String result =
-          await platform.invokeMethod('simulateExpenseSMS', {'USERID': userID});
-      print(result);
-    } on PlatformException catch (e) {
-      print("Failed to invoke method: '${e.message}'.");
-    }
+Future<void> simulateExpense(userID) async {
+  const platform = MethodChannel('com.pocketwise.app/simulator');
+  Logger().i('simulateExpense called with userID: $userID');
+  try {
+    final String result =
+        await platform.invokeMethod('simulateExpenseSMS', {'USERID': userID});
+    print(result);
+  } on PlatformException catch (e) {
+    print("Failed to invoke method: '${e.message}'.");
   }
+}
