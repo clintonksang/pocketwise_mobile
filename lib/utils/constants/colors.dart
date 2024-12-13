@@ -19,7 +19,7 @@ import 'package:flutter/material.dart';
    Color categoryColor = const Color.fromARGB(255, 0, 45, 82);
   Color debtColor = Colors.amber;
   Color sandicolor = const Color.fromARGB(255, 255, 81, 0);
-  Color wantsColor = Colors.purple;
+  Color wantsColor = const Color.fromARGB(255, 154, 38, 175);
   Color needsColor = Color(0xff2255D9);
 
   final gradient = <Color>[];

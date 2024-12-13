@@ -41,3 +41,4 @@ class IncomeNotificationResponse : AppCompatActivity() {
         notificationManager.cancel(notificationId) // Cancel the notification
     }
 }
+

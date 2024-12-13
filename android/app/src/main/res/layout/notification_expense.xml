@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="8dp"
+    android:background="@android:color/transparent">
+
+    <TextView
+        android:id="@+id/notification_question"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Select a category for your expense"
+        android:textColor="#2255D9"
+        android:textSize="15sp"
+        android:layout_marginBottom="8dp" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_horizontal"
+        android:layout_marginBottom="8dp">
+
+        <Button
+            android:id="@+id/button_needs"
+            android:layout_width="190dp"
+            android:layout_height="40dp"
+            android:text="Needs"
+            android:textSize="14sp"
+            android:textColor="#FFFFFF"
+            android:background="@drawable/button_needs"
+            android:layout_marginRight="4dp" />
+
+        <Button
+            android:id="@+id/button_wants"
+            android:layout_width="190dp"
+            android:layout_height="40dp"
+            android:text="Wants"
+            android:textSize="14sp"
+            android:textColor="#FFFFFF"
+            android:background="@drawable/button_wants" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_horizontal">
+
+        <Button
+            android:id="@+id/button_savings"
+            android:layout_width="190dp"
+            android:layout_height="40dp"
+            android:text="Save/Inv.."
+            android:textSize="14sp"
+            android:textColor="#FFFFFF"
+            android:background="@drawable/button_savings"
+            android:layout_marginRight="4dp" />
+
+        <Button
+            android:id="@+id/button_debt"
+            android:layout_width="190dp"
+            android:layout_height="40dp"
+            android:text="Debt"
+            android:textSize="14sp"
+            android:textColor="#FFFFFF"
+            android:background="@drawable/button_debt" />
+    </LinearLayout>
+</LinearLayout>

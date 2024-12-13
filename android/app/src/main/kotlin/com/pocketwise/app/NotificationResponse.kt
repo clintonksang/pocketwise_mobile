@@ -1,14 +1,11 @@
-
 package com.pocketwise.app
 
-
-import android.os.Bundle
-import androidx.appcompat.app.AppCompatActivity
-import android.util.Log
-import android.content.Intent
-import android.widget.Button
 import android.app.NotificationManager
 import android.content.Context
+import android.os.Bundle
+import android.util.Log
+import android.widget.Button
+import androidx.appcompat.app.AppCompatActivity
 
 class NotificationResponse : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -20,12 +17,15 @@ class NotificationResponse : AppCompatActivity() {
         val buttonSavings = findViewById<Button>(R.id.button_savings)
         val buttonDebt = findViewById<Button>(R.id.button_debt)
 
-        // Here we're assuming a notificationId for the example. This should come from your Intent or be predefined.
-        val notificationId = 1 // You might want to dynamically assign this based on the intent or another source.
+        // Here we're assuming a notificationId for the example. This should come from your Intent
+        // or be predefined.
+        val notificationId =
+                1 // You might want to dynamically assign this based on the intent or another
+        // source.
 
         buttonNeeds.setOnClickListener { logSelection("Needs", notificationId) }
         buttonWants.setOnClickListener { logSelection("Wants", notificationId) }
-        buttonSavings.setOnClickListener { logSelection("Savings / Investments", notificationId) }
+        buttonSavings.setOnClickListener { logSelection("Sav/Inv", notificationId) }
         buttonDebt.setOnClickListener { logSelection("Debt", notificationId) }
     }
 
@@ -36,7 +36,8 @@ class NotificationResponse : AppCompatActivity() {
     }
 
     private fun cancelNotification(notificationId: Int) {
-        val notificationManager: NotificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        val notificationManager: NotificationManager =
+                getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         notificationManager.cancel(notificationId) // Cancel the notification
     }
 }
