@@ -1,7 +1,6 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-
 import '../../router/approuter.dart';
 import '../../utils/widgets/authentication/authpages.dart';
 import '../../utils/widgets/authentication/phoneField.dart';
@@ -17,17 +16,15 @@ class Login extends StatefulWidget {
 class _LoginState extends State<Login> {
 // simulate mpesa transaction
   static const platform = MethodChannel('com.pocketwise.app/simulator');
-  Future<void> sendTestTransaction() async {
-    print("simulating transaction");
+
+  Future<void> simulateExpense() async {
     try {
-      final String result = await platform.invokeMethod('simulateTransaction', {
-        "message":
-            "SL71JZ3A6D Confirmed.You have received Ksh200.00 from Absa Bank Kenya PLC. 303031 on 7/12/24 at 12:01 PM New M-PESA balance is Ksh454.87. Separate personal and business funds through Pochi la Biashara on *334#."
-      });
+      final String userId = "12345"; // This should be dynamically assigned
+      final String result =
+          await platform.invokeMethod('simulateExpenseSMS', {'USERID': userId});
       print(result);
-      print("transaction successful");
     } on PlatformException catch (e) {
-      print("Failed to Invoke: '${e.message}'.");
+      print("Failed to invoke method: '${e.message}'.");
     }
   }
 
@@ -39,7 +36,8 @@ class _LoginState extends State<Login> {
     return AuthPageManager(
       pagetitle: 'login.login'.tr(),
       onButtonPressed: () {
-        sendTestTransaction();
+        //  SIMULATE HERE
+        simulateExpense();
         // Navigator.pushNamed(context, AppRouter.pagemanager);
       },
       buttontext: 'login.login'.tr(),

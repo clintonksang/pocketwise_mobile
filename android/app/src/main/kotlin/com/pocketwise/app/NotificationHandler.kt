@@ -25,7 +25,7 @@ class NotificationHandler(private val context: Context) {
 
         // Intent for "Yes" action
         val yesIntent =
-                Intent(context, NotificationActionReceiver::class.java).apply {
+                Intent(context, IncomeNotificationAction::class.java).apply {
                     action = "com.pocketwise.app.YES_ACTION"
                     putExtra("action", "yes")
                     putExtra("amount", amount)
@@ -41,7 +41,7 @@ class NotificationHandler(private val context: Context) {
 
         // Intent for "No" action
         val noIntent =
-                Intent(context, NotificationActionReceiver::class.java).apply {
+                Intent(context, IncomeNotificationAction::class.java).apply {
                     action = "com.pocketwise.app.NO_ACTION"
                     putExtra("action", "no")
                     putExtra("amount", amount)

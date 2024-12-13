@@ -5,6 +5,7 @@ import android.app.NotificationManager
 import android.content.Context
 import android.content.pm.PackageManager
 import android.os.Build
+import android.util.Log
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.EventChannel
@@ -20,27 +21,53 @@ class MainActivity : FlutterActivity() {
             eventSink?.success(message)
         }
     }
+    // original configureflutter engine
+    // override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
+    //     super.configureFlutterEngine(flutterEngine)
+    //     EventChannel(flutterEngine.dartExecutor.binaryMessenger, "sms_stream")
+    //             .setStreamHandler(
+    //                     object : EventChannel.StreamHandler {
+    //                         override fun onListen(arguments: Any?, events:
+    // EventChannel.EventSink) {
+    //                             eventSink = events
+    //                         }
 
+    //                         override fun onCancel(arguments: Any?) {
+    //                             eventSink = null
+    //                         }
+    //                     }
+    //             )
+
+    //     }
+    // }
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
+
+        // Existing EventChannel setup
         EventChannel(flutterEngine.dartExecutor.binaryMessenger, "sms_stream")
                 .setStreamHandler(
                         object : EventChannel.StreamHandler {
-                            override fun onListen(arguments: Any?, events: EventChannel.EventSink) {
+                            override fun onListen(
+                                    arguments: Any?,
+                                    events: EventChannel.EventSink?
+                            ) {
                                 eventSink = events
                             }
-
                             override fun onCancel(arguments: Any?) {
                                 eventSink = null
                             }
                         }
                 )
+
+        // Setup MethodChannel for simulation
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, CHANNEL).setMethodCallHandler {
                 call,
                 result ->
-            if (call.method == "simulateTransaction") {
-                val message = call.argument<String>("message")
-                simulateTransaction(message, result)
+            if (call.method == "simulateExpenseSMS") {
+                val userId = call.argument<String>("USERID") ?: "Unknown User"
+                simulateExpenseSMS(userId)
+                saveUserId(userId)
+                result.success("Expense simulation triggered for User ID: $userId")
             } else {
                 result.notImplemented()
             }
@@ -54,7 +81,7 @@ class MainActivity : FlutterActivity() {
         checkAndRequestPermissions()
         requestNotificationPermission()
         // simulateIncomingSMS()incomce
-        simulateExpenseSMS() // exense
+        // simulateExpenseSMS() // exense
     }
 
     private fun createNotificationChannel() {
@@ -71,7 +98,6 @@ class MainActivity : FlutterActivity() {
             notificationManager.createNotificationChannel(channel)
         }
     }
-    
 
     private fun checkAndRequestPermissions() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
@@ -116,19 +142,28 @@ class MainActivity : FlutterActivity() {
         val transactionHandler = TransactionHandler(this)
         transactionHandler.handleTransactionMessage(simulatedMessage)
     }
-    private fun simulateExpenseSMS() {
+    private fun simulateExpenseSMS(userId: String) {
         // Simulating an SMS receive
         val simulatedMessage =
-                "SL72LA7S0G Confirmed. Ksh200.00 paid to GOOGLEMART  MINI  MARKET. on 7/12/24 at 5:05 PM.New M-PESA balance is Ksh0.00. Transaction cost, Ksh0.00. Amount you can transact within the day is 499,300.00. Download new M-PESA app on http://bit.ly/mpesappsm & get 500MB FREE data"
+                "SL72LA7S0G Confirmed. Ksh200.00 paid to GOOGLEMART MINI MARKET. on 7/12/24 at 5:05 PM.New M-PESA balance is Ksh0.00. Transaction cost, Ksh0.00. Amount you can transact within the day is 499,300.00. Download new M-PESA app on http://bit.ly/mpesappsm & get 500MB FREE data"
         val transactionHandler = TransactionHandler(this)
         transactionHandler.handleTransactionMessage(simulatedMessage)
+        Log.d("MainActivity", "Simulated expense SMS for User ID: $userId")
     }
-    private fun simulateTransaction(message: String?, result: MethodChannel.Result) {
-        if (message != null) {
-            println("Simulating transaction with message: $message")
-            result.success("Transaction simulated with message: $message")
-        } else {
-            result.error("ERROR", "No message received for simulation.", null)
+    fun saveUserId(userId: String) {
+        val sharedPreferences = getSharedPreferences("AppPreferences", Context.MODE_PRIVATE)
+        sharedPreferences.edit().apply {
+            putString("userId", userId)
+            apply()
         }
     }
+    
+    // private fun simulateTransaction(message: String?, result: MethodChannel.Result) {
+    //     if (message != null) {
+    //         println("Simulating transaction with message: $message")
+    //         result.success("Transaction simulated with message: $message")
+    //     } else {
+    //         result.error("ERROR", "No message received for simulation.", null)
+    //     }
+    // }
 }

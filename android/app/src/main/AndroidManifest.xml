@@ -50,7 +50,7 @@
             </intent-filter>
         </receiver>
         <receiver
-            android:name=".NotificationActionReceiver"
+            android:name=".IncomeNotificationAction"
             android:exported="true">
             <intent-filter>
                 <action android:name="com.pocketwise.app.YES_ACTION" />
