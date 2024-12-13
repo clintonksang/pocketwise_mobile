@@ -57,17 +57,14 @@
                 <action android:name="com.pocketwise.app.NO_ACTION" />
             </intent-filter>
         </receiver>
-        <receiver
-            android:name=".ExpenseNotificationAction"
-            android:exported="true">
+        <receiver android:name=".ExpenseNotificationAction" android:exported="true">
             <intent-filter>
-                <action android:name="com.pocketwise.app.NEEDS_ACTION" />
-                <action android:name="com.pocketwise.app.WANTS_ACTION" />
-                <action android:name="com.pocketwise.app.SAVINGS_ACTION" />
-                <action android:name="com.pocketwise.app.DEBT_ACTION" />
+                <action android:name="com.pocketwise.app.ACTION_NEEDS" />
+                <action android:name="com.pocketwise.app.ACTION_WANTS" />
+                <action android:name="com.pocketwise.app.ACTION_SAVINGS" />
+                <action android:name="com.pocketwise.app.ACTION_DEBT" />
             </intent-filter>
         </receiver>
-
 
         <receiver
             android:name=".TransactionReceiver"

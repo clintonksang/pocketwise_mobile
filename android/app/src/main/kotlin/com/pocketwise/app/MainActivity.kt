@@ -71,6 +71,7 @@ class MainActivity : FlutterActivity() {
             notificationManager.createNotificationChannel(channel)
         }
     }
+    
 
     private fun checkAndRequestPermissions() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
