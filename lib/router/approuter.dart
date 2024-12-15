@@ -47,7 +47,9 @@ class AppRouter {
         return _slideRoute(Login());
     
       case otpscreen:
-      return _slideRoute(OtpScreen());
+       
+          return _slideRoute(OtpScreen(verificationCode: args as String));
+       
       case kycpage:
       return _slideRoute(EnterKYCPage());
       case add_income:

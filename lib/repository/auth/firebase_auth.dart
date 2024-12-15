@@ -1,6 +1,6 @@
+import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'package:flutter/material.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:logger/logger.dart';
 
@@ -12,8 +12,7 @@ class Auth {
   Future<void> registerWithEmailPassword(String email, String password) async {
     try {
       final FirebaseAuth _auth = FirebaseAuth.instance;
-      final UserCredential userCredential =
-          await _auth.createUserWithEmailAndPassword(
+      final UserCredential userCredential = await _auth.createUserWithEmailAndPassword(
         email: email,
         password: password,
       );
@@ -28,7 +27,11 @@ class Auth {
     await Firebase.initializeApp();
   }
 
-  Future<void> signInWithPhone(String phoneNumber, BuildContext context) async {
+  Future<void> signInWithPhone(
+      String phoneNumber,
+      BuildContext context,
+      Function onCodeSent,
+      Function(String) onError) async {
     Logger().i('Phone number: $phoneNumber');
     final FirebaseAuth _auth = FirebaseAuth.instance;
     _auth.verifyPhoneNumber(
@@ -38,10 +41,11 @@ class Auth {
         print("Phone auto-retrieval or instant sign-in completed");
       },
       verificationFailed: (FirebaseAuthException e) {
-        print("Verification failed: $e");
+        onError("Verification failed: ${e.message}");
       },
       codeSent: (String verificationId, int? resendToken) {
         print("Code sent to $phoneNumber");
+        onCodeSent(verificationId, resendToken);   
       },
       codeAutoRetrievalTimeout: (String verificationId) {
         print("Code auto-retrieval timeout");
@@ -53,16 +57,14 @@ class Auth {
     try {
       final GoogleSignIn _googleSignIn = GoogleSignIn();
       final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
-      final GoogleSignInAuthentication googleAuth =
-          await googleUser!.authentication;
+      final GoogleSignInAuthentication googleAuth = await googleUser!.authentication;
 
       final OAuthCredential credential = GoogleAuthProvider.credential(
         accessToken: googleAuth.accessToken,
         idToken: googleAuth.idToken,
       );
 
-      final UserCredential userCredential =
-          await FirebaseAuth.instance.signInWithCredential(credential);
+      final UserCredential userCredential = await FirebaseAuth.instance.signInWithCredential(credential);
       var user = userCredential.user;
 
       print("Google sign-in successful, User UID: ${user!.uid}");
@@ -71,3 +73,6 @@ class Auth {
     }
   }
 }
+
+// Example usage of signInWithPhone with callbacks:
+

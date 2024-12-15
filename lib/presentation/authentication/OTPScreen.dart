@@ -6,21 +6,20 @@ import '../../router/approuter.dart';
 import '../../utils/widgets/authentication/authpages.dart';
 
 class OtpScreen extends StatelessWidget {
-  const OtpScreen({super.key});
+  final String verificationCode;
+  const OtpScreen({super.key, required this.verificationCode});
 
   @override
   Widget build(BuildContext context) {
     return AuthPageManager(
       pagetitle: 'register.verify_phone'.tr(),
-      onButtonPressed: (){
+      onButtonPressed: () {
         Navigator.pushNamed(context, AppRouter.kycpage);
       },
       buttontext: "home.continue".tr(),
-      pagedescription:  "register.enter_otp".tr(),
+      pagedescription: "register.enter_otp".tr(),
       children: Column(
-        children: [
-          OTPField()
-        ],
+        children: [OTPField(verificationId: verificationCode)],
       ),
     );
   }

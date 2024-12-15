@@ -16,9 +16,7 @@ class PhoneScreen extends StatefulWidget {
 }
 
 class _PhoneScreenState extends State<PhoneScreen> {
- 
-
-  bool validphone = true;
+  bool validphone = false;
 
   String phoneNum = "";
   validatePhone(String phone) {
@@ -39,13 +37,20 @@ class _PhoneScreenState extends State<PhoneScreen> {
   @override
   Widget build(BuildContext context) {
     TextEditingController phoneController = TextEditingController();
+    Auth auth = Auth();
     return AuthPageManager(
       pagetitle: 'register.register'.tr(),
       onButtonPressed: () {
         validatePhone(phoneController.text);
         if (validphone) {
-          Auth().signInWithPhone(phoneNum, context);
-          Navigator.pushNamed(context, AppRouter.otpscreen);
+          auth.signInWithPhone(
+            phoneNum,
+            context,
+            (verificationId, resendToken) => Navigator.pushNamed(
+                context, AppRouter.otpscreen,
+                arguments: verificationId),
+            (errorMessage) => showCustomSnackbar(context, errorMessage),
+          );
         } else {
           showCustomSnackbar(
               context, 'Please enter a valid phone number (9 digits)');
