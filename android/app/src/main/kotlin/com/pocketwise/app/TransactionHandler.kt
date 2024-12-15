@@ -32,7 +32,7 @@ class TransactionHandler(private val context: Context) {
                         .setSmallIcon(R.drawable.logo)
                         .setContentTitle("Join Pocketwise")
                         .setContentText(
-                                "Register with Pocketwise to start tracking your finances effectively!"
+                                "Pocketwise allows you to automate tracking of finances effectively!"
                         )
                         .setPriority(NotificationCompat.PRIORITY_HIGH)
                         .build()

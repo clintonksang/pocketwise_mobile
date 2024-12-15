@@ -5,7 +5,8 @@ import 'package:intl_phone_field/intl_phone_field.dart';
 import '../../constants/colors.dart';
 
 class Phonefield extends StatefulWidget {
-  const Phonefield({super.key});
+  final TextEditingController phoneController;
+  const Phonefield({super.key, required this.phoneController});
 
   @override
   State<Phonefield> createState() => _PhonefieldState();
@@ -16,8 +17,6 @@ class _PhonefieldState extends State<Phonefield> {
   bool _showPhoneNoErrorText = false;
   String _selectedCountryCode = "+254";
 
-  final TextEditingController _phoneController = TextEditingController();
-
   _hidePhoneNumberErrorMessage() {
     setState(() {
       _showPhoneNoErrorText = false;
@@ -27,14 +26,14 @@ class _PhonefieldState extends State<Phonefield> {
   @override
   Widget build(BuildContext context) {
     return IntlPhoneField(
-      controller: _phoneController,
+      controller: widget.phoneController,
       disableLengthCheck: true,
       decoration: InputDecoration(
         filled: true,
-        fillColor: Colors.white,  
+        fillColor: Colors.white,
         enabledBorder: OutlineInputBorder(
           borderRadius: const BorderRadius.all(Radius.circular(10.0)),
-          borderSide: BorderSide(width: 1, color: Colors.white), // Border color
+          borderSide: BorderSide(width: 1, color: Colors.white),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: const BorderRadius.all(Radius.circular(10.0)),

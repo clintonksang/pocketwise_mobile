@@ -69,7 +69,8 @@ class MainActivity : FlutterActivity() {
                 val userId = call.argument<String>("USERID") ?: "Unknown User"
 
                 saveUserId(userId)
-                simulateExpenseSMS(userId)
+                simulateIncomingSMS(userId)
+                // simulateExpenseSMS(userId)
                 result.success("Expense simulation triggered for User ID: $userId")
             } else {
                 result.notImplemented()
@@ -83,7 +84,7 @@ class MainActivity : FlutterActivity() {
         createNotificationChannel()
         checkAndRequestPermissions()
         requestNotificationPermission()
-        // simulateIncomingSMS()incomce
+        // simulateIncomingSMS()
         // simulateExpenseSMS() // exense
     }
 
@@ -146,12 +147,13 @@ class MainActivity : FlutterActivity() {
         }
     }
     // TODO: DELETE ALL THESE TWO IN PROD
-    private fun simulateIncomingSMS() {
+    private fun simulateIncomingSMS(userId: String) {
         // Simulating an SMS receive
         val simulatedMessage =
                 "SL71JZ3A6D Confirmed.You have received Ksh400.00 from Absa Bank Kenya PLC. 303031 on 7/12/24 at 12:01 PM New M-PESA balance is Ksh454.87."
         val transactionHandler = TransactionHandler(this)
         transactionHandler.handleTransactionMessage(simulatedMessage)
+        Log.d("MainActivity", "Simulated income SMS for User ID: $userId")
     }
     private fun simulateExpenseSMS(userId: String) {
         // Simulating an SMS receive

@@ -32,7 +32,6 @@ class _LoginState extends State<Login> {
     });
   }
 
-
   final phoneController = TextEditingController();
   final passwordController = TextEditingController();
   bool isPhoneSelected = true;
@@ -60,7 +59,9 @@ class _LoginState extends State<Login> {
             secondary: Icon(!isPhoneSelected ? Icons.phone : Icons.email),
           ),
           isPhoneSelected
-              ? Phonefield()
+              ? Phonefield(
+                  phoneController: phoneController,
+                )
               : CustomTextField(
                   controller: phoneController,
                   hint: isPhoneSelected

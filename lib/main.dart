@@ -1,4 +1,5 @@
 import 'package:easy_localization/easy_localization.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'dart:async';
@@ -7,8 +8,10 @@ import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:pocketwise/firebase_options.dart';
 import 'package:pocketwise/provider/category_provider.dart';
 import 'package:pocketwise/provider/dropdown_provider.dart';
+import 'package:pocketwise/repository/auth/firebase_auth.dart';
 import 'package:provider/provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'provider/income_provider.dart';
@@ -23,6 +26,7 @@ void main() {
 
     SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
     SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
+     await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
     runApp(EasyLocalization(
       path: 'assets/lang',
       supportedLocales: const [

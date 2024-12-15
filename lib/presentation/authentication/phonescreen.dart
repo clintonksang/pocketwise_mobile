@@ -1,8 +1,11 @@
 import 'package:easy_localization/easy_localization.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:pocketwise/repository/auth/firebase_auth.dart';
 import 'package:pocketwise/router/approuter.dart';
 import 'package:pocketwise/utils/widgets/authentication/phoneField.dart';
 
+import '../../utils/constants/customsnackbar.dart';
 import '../../utils/widgets/authentication/authpages.dart';
 
 class PhoneScreen extends StatefulWidget {
@@ -13,20 +16,46 @@ class PhoneScreen extends StatefulWidget {
 }
 
 class _PhoneScreenState extends State<PhoneScreen> {
+ 
+
+  bool validphone = true;
+
+  String phoneNum = "";
+  validatePhone(String phone) {
+    if (phone.length != 9) {
+      setState(() {
+        validphone = false;
+      });
+      return 'Enter a valid phone number (9 digits)';
+    } else {
+      setState(() {
+        validphone = true;
+        phoneNum = "+254" + phone;
+      });
+    }
+    return null;
+  }
+
   @override
   Widget build(BuildContext context) {
+    TextEditingController phoneController = TextEditingController();
     return AuthPageManager(
       pagetitle: 'register.register'.tr(),
-      onButtonPressed: (){
-        Navigator.pushNamed(context, AppRouter.otpscreen);
+      onButtonPressed: () {
+        validatePhone(phoneController.text);
+        if (validphone) {
+          Auth().signInWithPhone(phoneNum, context);
+          Navigator.pushNamed(context, AppRouter.otpscreen);
+        } else {
+          showCustomSnackbar(
+              context, 'Please enter a valid phone number (9 digits)');
+        }
       },
       buttontext: "home.continue".tr(),
-      pagedescription: "register.description".tr() ,
-
+      pagedescription: "register.description".tr(),
       children: Column(
         children: [
-          Phonefield(),
-          
+          Phonefield(phoneController: phoneController),
         ],
       ),
     );

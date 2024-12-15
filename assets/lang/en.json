@@ -1,16 +1,16 @@
 {
-    "home":{
+    "home": {
         "pocketwise": "pocketwise",
         "account": "account",
         "income": "income",
         "balance": "balance",
         "tracker": "tracker",
-        "no_budget": "you have not added any income", 
+        "no_budget": "you have not added any income",
         "all_pockets": "all pockets",
         "expense": "expense",
         "add_income": "add income",
         "add_expense": "add expense",
-        "transactions": "transactions", 
+        "transactions": "transactions",
         "view_all": "view all",
         "pockets": "pockets",
         "pocket": "my pocket",
@@ -30,19 +30,18 @@
         "continue": "continue",
         "get_started": "get started"
     },
-    "income":{
+    "income": {
         "income": "income",
         "i_earn": "I earn",
-        "from_source": "from source ",       
-        "from": "type source of income",       
+        "from_source": "from source ",
+        "from": "type source of income",
         "every": "every",
         "frequency": "select frequency",
         "egmonthly": "e.g monthly",
         "add_another": "add another income ",
         "total_income": "total income"
-
     },
-    "pockets":{ 
+    "pockets": {
         "needs": "needs",
         "wants": "wants",
         "debt": "debt",
@@ -71,8 +70,8 @@
         "pocket_title": "pocket title",
         "egwaterbill": "e.g water bill pocket",
         "eg1000": "e.g 10000",
-        "category":"category",
-        "none_selected":"select a category",
+        "category": "category",
+        "none_selected": "select a category",
         "select": "select",
         "fund_pocket_question": "would you like to fund pocket?",
         "yes": "yes",
@@ -81,17 +80,13 @@
         "other_pockets": "other pockets",
         "fund_pocket": "fund pocket",
         "fund_from": "fund from",
-        "fund":"fund",
+        "fund": "fund",
         "water_bill_pocket": "water bill pocket"
-
-
-
-
     },
-    "settings":{
+    "settings": {
         "language": "language"
     },
-    "login":{
+    "login": {
         "login": "login",
         "enter_details": "enter your details",
         "email": "email",
@@ -102,15 +97,12 @@
         "enter_email_or_phone": "Enter your email / phone number",
         "first_name": "first name",
         "last_name": "last name",
-        "enter_email": "enter your email", 
+        "enter_email": "enter your email",
         "enter_password": "enter your password",
         "confirm_password": "confirm your password",
         "description": "Enter your details to sign in"
-        
-
-
     },
-    "register":{
+    "register": {
         "register": "register",
         "enter_phone": "enter your phone number",
         "name": "name",
@@ -129,11 +121,11 @@
         "hint_confirm_password": "********",
         "hint_phone": "700111222",
         "last_name": "last name",
-        "enter_email": "enter your email", 
+        "enter_email": "enter your email",
         "enter_password": "enter your password",
         "confirm_password": "confirm your password",
         "create_account": "create account",
         "verify_phone": "verify phone number",
-         "enter_otp": "Enter a 4 digit verification code (OTP) sent to your phone number"
+        "enter_otp": "Enter a 4 digit verification code (OTP) sent to your phone number"
     }
 }
