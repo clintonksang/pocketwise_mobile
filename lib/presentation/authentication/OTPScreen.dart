@@ -18,8 +18,13 @@ class OtpScreen extends StatelessWidget {
       },
       buttontext: "home.continue".tr(),
       pagedescription: "register.enter_otp".tr(),
-      children: Column(
-        children: [OTPField(verificationId: verificationCode)],
+      children: SingleChildScrollView(
+        child: Container(
+          height: MediaQuery.of(context).size.height * .8,
+          child: Column(
+            children: [OTPField(verificationId: verificationCode)],
+          ),
+        ),
       ),
     );
   }

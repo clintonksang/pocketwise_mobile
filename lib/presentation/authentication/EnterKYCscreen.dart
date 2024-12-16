@@ -1,6 +1,8 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../repository/auth/firebase_auth.dart';
 import '../../router/approuter.dart';
 import '../../utils/constants/customsnackbar.dart';
@@ -36,25 +38,61 @@ class _EnterKYCPageState extends State<EnterKYCPage> {
   bool isValidEmail(String email) =>
       RegExp(r'^[a-zA-Z0-9.]+@[a-zA-Z0-9]+\.[a-zA-Z]+').hasMatch(email);
 
-  void registerUser() {
+  void saveUserData(String uid, Map<String, dynamic> userData) {
+    // Save user data to Firestore
+    FirebaseFirestore.instance.collection('users').doc(uid).set(userData);
+    // Save user data to SharedPreferences
+    SharedPreferences.getInstance().then((prefs) {
+      prefs.setString('uid', uid);
+      prefs.setString('firstname', userData['firstname']);
+      prefs.setString('lastname', userData['lastname']);
+      prefs.setString('email', userData['email']);
+      prefs.setString('phoneNumber', userData['phoneNumber']);
+      prefs.setBool('verified', userData['verified']);
+    });
+  }
+
+  Future<String?> getPhoneNumber() async {
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    return prefs.getString('phone');
+  }
+
+  void registerUser() async {
     setState(() {
       isLoading = true;
     });
-    auth
-        .registerWithEmailPassword(
-            emailController.text, passwordController.text)
-        .then((_) {
+
+    try {
+      await auth.registerWithEmailPassword(
+          emailController.text, passwordController.text);
+      User? user = FirebaseAuth.instance.currentUser;
+
+      if (user != null) {
+        await sendEmailVerification(user);
+
+        final String? phoneNumber = await getPhoneNumber();
+        if (phoneNumber != null) {
+          // Save user data to Firestore
+          saveUserData(phoneNumber, {
+            'firstname': firstnameController.text,
+            'lastname': lastnameController.text,
+            'email': emailController.text,
+            "phoneNumber": phoneNumber,
+            "verified": false
+          });
+        }
+
+        showCustomSnackbar(context,
+            "Registration successful, Please check your email for verification.");
+        Navigator.pushNamed(context, AppRouter.login);
+      }
+    } catch (error) {
+      showCustomSnackbar(context, "Registration failed: $error");
+    } finally {
       setState(() {
         isLoading = false;
       });
-      // Send verification email
-      sendEmailVerification(FirebaseAuth.instance.currentUser!);
-      showCustomSnackbar(context,
-          "Registration successful, Please check your email for verification.");
-      Navigator.pushNamed(context, AppRouter.login);
-    }).catchError((error) {
-      showCustomSnackbar(context, "Registration failed: $error");
-    });
+    }
   }
 
   void checkFieldsAndNavigate() {

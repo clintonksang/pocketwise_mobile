@@ -31,9 +31,7 @@ class TransactionHandler(private val context: Context) {
                 NotificationCompat.Builder(context, "income_expense_channel")
                         .setSmallIcon(R.drawable.logo)
                         .setContentTitle("Join Pocketwise")
-                        .setContentText(
-                                "Pocketwise allows you to automate tracking of finances effectively!"
-                        )
+                        .setContentText("Track your income and expenses with Pocketwise. Join now!")
                         .setPriority(NotificationCompat.PRIORITY_HIGH)
                         .build()
 

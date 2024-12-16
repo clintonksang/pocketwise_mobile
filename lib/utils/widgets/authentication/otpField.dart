@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:pinput/pinput.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:pocketwise/utils/constants/colors.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../router/approuter.dart';
 
@@ -42,12 +43,11 @@ class _OTPFieldState extends State<OTPField> {
   @override
   void dispose() {
     _otpController.dispose();
-    
+
     _timer?.cancel();
     _remainingSeconds.dispose();
     super.dispose();
   }
-
 
   Future<void> verifyOTP() async {
     if (otp.length == 6) {
@@ -59,7 +59,7 @@ class _OTPFieldState extends State<OTPField> {
 
         await FirebaseAuth.instance.signInWithCredential(credential);
         _timer?.cancel();
-   
+
         Navigator.pushNamed(context, AppRouter.kycpage);
       } catch (e) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -68,8 +68,6 @@ class _OTPFieldState extends State<OTPField> {
       }
     }
   }
-
-  
 
   @override
   Widget build(BuildContext context) {
@@ -82,7 +80,7 @@ class _OTPFieldState extends State<OTPField> {
             controller: _otpController,
             onCompleted: (pin) {
               otp = pin;
-              verifyOTP(); // Verify OTP when the full code is entered
+              verifyOTP();
             },
             pinputAutovalidateMode: PinputAutovalidateMode.onSubmit,
             pinAnimationType: PinAnimationType.scale,
@@ -90,11 +88,12 @@ class _OTPFieldState extends State<OTPField> {
               width: 56,
               height: 56,
               textStyle: TextStyle(
-                fontSize: 20,
-                color: Color.fromRGBO(30, 60, 87, 1),
-                fontWeight: FontWeight.w600),
+                  fontSize: 20,
+                  color: Color.fromRGBO(30, 60, 87, 1),
+                  fontWeight: FontWeight.w600),
               decoration: BoxDecoration(
-                border: Border.all(color: Color.fromRGBO(234, 239, 243, 1)),
+                color: Colors.white,
+                border: Border.all(color: Colors.grey[500]!),
                 borderRadius: BorderRadius.circular(20),
               ),
             ),

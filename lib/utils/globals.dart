@@ -37,7 +37,7 @@ class PocketWiseLogo extends StatelessWidget {
   }
 }
 
-Future<void> simulateExpense(userID) async {
+Future<void> saveUserIDToNative(userID) async {
   const platform = MethodChannel('com.pocketwise.app/simulator');
   Logger().i('simulateExpense called with userID: $userID');
   try {

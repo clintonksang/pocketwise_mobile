@@ -69,7 +69,7 @@ class MainActivity : FlutterActivity() {
                 val userId = call.argument<String>("USERID") ?: "Unknown User"
 
                 saveUserId(userId)
-                simulateIncomingSMS(userId)
+                // simulateIncomingSMS(userId)
                 // simulateExpenseSMS(userId)
                 result.success("Expense simulation triggered for User ID: $userId")
             } else {

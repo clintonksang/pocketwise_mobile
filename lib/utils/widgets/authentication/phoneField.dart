@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:intl_phone_field/intl_phone_field.dart';
 
 import '../../constants/colors.dart';
+import '../../constants/textutil.dart';
 
 class Phonefield extends StatefulWidget {
   final TextEditingController phoneController;
@@ -40,7 +41,8 @@ class _PhonefieldState extends State<Phonefield> {
           borderSide: BorderSide(width: 1, color: primaryColor),
         ),
         labelText: "register.enter_phone".tr(),
-        hintText: 'e.g 712345678',
+        hintText: 'e.g 700000000',
+        hintStyle: AppTextStyles.smallLight.copyWith(color: Colors.grey),
       ),
       initialCountryCode: 'KE',
       autovalidateMode: AutovalidateMode.onUserInteraction,

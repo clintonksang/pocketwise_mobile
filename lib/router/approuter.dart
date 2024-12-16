@@ -30,7 +30,6 @@ class AppRouter {
   static const String kycpage = "/kycpage";
   static const String pagemanager = "/pagemanager";
 
-
   static Route<dynamic> onGenerateRoute(RouteSettings settings) {
     final args = settings.arguments;
     Logger logger = Logger();
@@ -45,34 +44,32 @@ class AppRouter {
         return _slideRoute(PhoneScreen());
       case login:
         return _slideRoute(Login());
-    
+
       case otpscreen:
-       
-          return _slideRoute(OtpScreen(verificationCode: args as String));
-       
+        return _slideRoute(OtpScreen(verificationCode: args as String));
+
       case kycpage:
-      return _slideRoute(EnterKYCPage());
+        return _slideRoute(EnterKYCPage());
       case add_income:
         return _slideRoute(AddIncome());
       case viewPocket:
-        return _slideRoute(ViewPockets( 
-          args: args as PocketModel, 
+        return _slideRoute(ViewPockets(
+          args: args as PocketModel,
         ));
       case viewCategory:
-        return _slideRoute(ViewExpense( 
-          categoriesModel: args as CategoriesModel, 
+        return _slideRoute(ViewExpense(
+          categoriesModel: args as CategoriesModel,
         ));
 
-         case viewBudget:
-        return _slideRoute(ViewBudget( 
-          categoriesModel: args as BudgetModel, 
+      case viewBudget:
+        return _slideRoute(ViewBudget(
+          categoriesModel: args as BudgetModel,
         ));
-        case addExpense:
-        return _slideRoute(
-          AddExpense( 
-          // categoriesModel: args as CategoriesModel,
-        ));
-        
+      case addExpense:
+        return _slideRoute(AddExpense(
+            // categoriesModel: args as CategoriesModel,
+            ));
+
       default:
         return _slideRoute(PageManager()); // Fallback to initial route
     }
@@ -85,7 +82,8 @@ class AppRouter {
         const begin = Offset(1.0, 0.0);
         const end = Offset.zero;
         const curve = Curves.easeInOut;
-        var tween = Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
+        var tween =
+            Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
         var offsetAnimation = animation.drive(tween);
 
         return SlideTransition(

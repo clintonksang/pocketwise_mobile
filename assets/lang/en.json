@@ -127,6 +127,6 @@
         "create_account": "create account",
         "verify_phone": "verify phone number",
         "please_wait": "Please wait as we create your account",
-        "enter_otp": "Enter a 4 digit verification code (OTP) sent to your phone number"
+        "enter_otp": "Enter a 6 digit verification code (OTP) sent to your phone number"
     }
 }
