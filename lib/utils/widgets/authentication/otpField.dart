@@ -1,8 +1,8 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:pocketwise/utils/constants/colors.dart';
-import 'package:sms_autofill/sms_autofill.dart';
+import 'package:pinput/pinput.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../../router/approuter.dart';
 
 class OTPField extends StatefulWidget {
@@ -16,66 +16,101 @@ class OTPField extends StatefulWidget {
 
 class _OTPFieldState extends State<OTPField> {
   String otp = '';
-  final TextEditingController _otpController =
-      TextEditingController(); // Added for controlling text input
+  final TextEditingController _otpController = TextEditingController();
+  Timer? _timer;
+  ValueNotifier<int> _remainingSeconds = ValueNotifier(30);
+
+  @override
+  void initState() {
+    super.initState();
+    _startTimer();
+  }
+
+  void _startTimer() {
+    _timer = Timer.periodic(Duration(seconds: 1), (timer) {
+      if (_remainingSeconds.value > 0) {
+        _remainingSeconds.value--;
+      } else {
+        _timer?.cancel();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Time out. Please request OTP again.")),
+        );
+      }
+    });
+  }
 
   @override
   void dispose() {
     _otpController.dispose();
+    
+    _timer?.cancel();
+    _remainingSeconds.dispose();
     super.dispose();
   }
 
+
   Future<void> verifyOTP() async {
-    try {
-      // Create a PhoneAuthCredential with the code
-      PhoneAuthCredential credential = PhoneAuthProvider.credential(
-        verificationId: widget.verificationId,
-        smsCode: otp,
-      );
+    if (otp.length == 6) {
+      try {
+        PhoneAuthCredential credential = PhoneAuthProvider.credential(
+          verificationId: widget.verificationId,
+          smsCode: otp,
+        );
 
-      // Sign in the user with the credential
-      await FirebaseAuth.instance.signInWithCredential(credential);
-      Navigator.pushNamed(context, AppRouter.kycpage);
-
-      // ScaffoldMessenger.of(context).showSnackBar(
-      //   SnackBar(content: Text("Phone verification successful")),
-      // );
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Failed to verify OTP: $e")),
-      );
+        await FirebaseAuth.instance.signInWithCredential(credential);
+        _timer?.cancel();
+   
+        Navigator.pushNamed(context, AppRouter.kycpage);
+      } catch (e) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Failed to verify OTP: $e")),
+        );
+      }
     }
   }
 
+  
+
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 16.0, horizontal: 24.0),
-      child: PinFieldAutoFill(
-        controller: _otpController,
-        codeLength: 6,
-        decoration: BoxLooseDecoration(
-          strokeColorBuilder: FixedColorBuilder(white),
-          bgColorBuilder: FixedColorBuilder(white), // Light background
-          gapSpace: 15.0,
-          radius: const Radius.circular(10.0),
-          textStyle: const TextStyle(
-            color: Colors.black,
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
+    return Column(
+      children: [
+        Container(
+          padding: const EdgeInsets.symmetric(vertical: 16.0, horizontal: 24.0),
+          child: Pinput(
+            length: 6,
+            controller: _otpController,
+            onCompleted: (pin) {
+              otp = pin;
+              verifyOTP(); // Verify OTP when the full code is entered
+            },
+            pinputAutovalidateMode: PinputAutovalidateMode.onSubmit,
+            pinAnimationType: PinAnimationType.scale,
+            defaultPinTheme: PinTheme(
+              width: 56,
+              height: 56,
+              textStyle: TextStyle(
+                fontSize: 20,
+                color: Color.fromRGBO(30, 60, 87, 1),
+                fontWeight: FontWeight.w600),
+              decoration: BoxDecoration(
+                border: Border.all(color: Color.fromRGBO(234, 239, 243, 1)),
+                borderRadius: BorderRadius.circular(20),
+              ),
+            ),
           ),
         ),
-        onCodeChanged: (String? code) {
-          if (code != null && code.length == 6) {
-            otp = code;
-            verifyOTP(); // Verify OTP as soon as the code length matches
-          }
-        },
-        onCodeSubmitted: (String code) {
-          otp = code;
-          verifyOTP(); // Also attempt verification when the code is submitted
-        },
-      ),
+        ValueListenableBuilder<int>(
+          valueListenable: _remainingSeconds,
+          builder: (_, remainingSeconds, __) => Padding(
+            padding: const EdgeInsets.only(top: 8.0),
+            child: Text(
+              'Please enter the OTP within $remainingSeconds seconds.',
+              style: TextStyle(color: Colors.grey[600]),
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

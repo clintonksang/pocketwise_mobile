@@ -1,7 +1,9 @@
 import 'package:easy_localization/easy_localization.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-
+import '../../repository/auth/firebase_auth.dart';
 import '../../router/approuter.dart';
+import '../../utils/constants/customsnackbar.dart';
 import '../../utils/widgets/authentication/authpages.dart';
 import '../../utils/widgets/pockets/textfield.dart';
 
@@ -16,85 +18,135 @@ class _EnterKYCPageState extends State<EnterKYCPage> {
   TextEditingController passwordController = TextEditingController();
   TextEditingController firstnameController = TextEditingController();
   TextEditingController lastnameController = TextEditingController();
-  TextEditingController emailController  = TextEditingController();
+  TextEditingController emailController = TextEditingController();
   TextEditingController confirmpasswordController = TextEditingController();
+  final Auth auth = Auth();
+  bool isLoading = false;
+
+  Future<void> sendEmailVerification(User user) async {
+    try {
+      await user.sendEmailVerification();
+      print("Verification email sent.");
+    } catch (e) {
+      print("Failed to send verification email: $e");
+      throw Exception(e);
+    }
+  }
+
+  bool isValidEmail(String email) =>
+      RegExp(r'^[a-zA-Z0-9.]+@[a-zA-Z0-9]+\.[a-zA-Z]+').hasMatch(email);
+
+  void registerUser() {
+    setState(() {
+      isLoading = true;
+    });
+    auth
+        .registerWithEmailPassword(
+            emailController.text, passwordController.text)
+        .then((_) {
+      setState(() {
+        isLoading = false;
+      });
+      // Send verification email
+      sendEmailVerification(FirebaseAuth.instance.currentUser!);
+      showCustomSnackbar(context,
+          "Registration successful, Please check your email for verification.");
+      Navigator.pushNamed(context, AppRouter.login);
+    }).catchError((error) {
+      showCustomSnackbar(context, "Registration failed: $error");
+    });
+  }
+
+  void checkFieldsAndNavigate() {
+    String errorMessage = '';
+    if (firstnameController.text.isEmpty) {
+      errorMessage = 'Please enter your first name.';
+    } else if (lastnameController.text.isEmpty) {
+      errorMessage = 'Please enter your last name.';
+    } else if (emailController.text.isEmpty ||
+        !isValidEmail(emailController.text)) {
+      errorMessage = 'Please enter a valid email address.';
+    } else if (passwordController.text.isEmpty) {
+      errorMessage = 'Please enter a password.';
+    } else if (passwordController.text.length < 8) {
+      errorMessage = 'Password must be at least 8 characters long.';
+    } else if (confirmpasswordController.text.isEmpty) {
+      errorMessage = 'Please confirm your password.';
+    } else if (passwordController.text != confirmpasswordController.text) {
+      errorMessage = 'Passwords do not match.';
+    }
+
+    if (errorMessage.isNotEmpty) {
+      showCustomSnackbar(context, errorMessage);
+    } else {
+      registerUser();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return AuthPageManager(
       pagetitle: 'register.enter_details'.tr(),
-      onButtonPressed: (){
-       Navigator.pushNamed(context, AppRouter.login);
-      },
+      onButtonPressed: checkFieldsAndNavigate,
       buttontext: "register.sign_up".tr(),
-      pagedescription:'register.enter_details'.tr(),
-      children: Column(children: [
-
-        // firstname /lastname
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            CustomTextField(
-                  controller: firstnameController,
-                  width: MediaQuery.of(context).size.width*.42,
-                  
-                  hint: 'register.hint_first_name'.tr(),
-                  title:'register.first_name'.tr(),
-                  keyboardType: TextInputType.text,
-                  
-                 ),
-
-            CustomTextField(
-                  controller: lastnameController,
-                  width: MediaQuery.of(context).size.width*.42,
-                  
-                  hint: 'register.hint_last_name'.tr(),
-                  title:'register.last_name'.tr(),
-                  keyboardType: TextInputType.text,
-                  
-                 ),
-          ],
-        ),
-SizedBox(height: 15,),
-        //  email
-    CustomTextField(
-              controller: emailController,
-              width: MediaQuery.of(context).size.width,
-              hint: 'register.hint_email'.tr(),
-              title:'register.email'.tr(),
-              keyboardType: TextInputType.text,
-              
-              ),
-              SizedBox(height: 15,),
-
-    //  password
-    CustomTextField(
-              controller: passwordController,
-              width: MediaQuery.of(context).size.width,
-              isPassword: true,
-              hint: 'register.enter_password'.tr(),
-              title: 'register.password'.tr(),
-              keyboardType: TextInputType.text,
-              
-             ),
-             SizedBox(height: 15,),
-
-      // confirm password
-      CustomTextField(
-              controller: confirmpasswordController,
-              width: MediaQuery.of(context).size.width,
-              isPassword: true,
-              hint: 'register.hint_confirm_password'.tr(),
-              title:'register.confirm_password'.tr(),
-              keyboardType: TextInputType.text,
-              
-             ),
-             SizedBox(height: 15,),
-
-
-
-
-
-      ],),
+      pagedescription: 'register.enter_details'.tr(),
+      children: Column(
+        children: [
+          isLoading
+              ? Column(
+                  children: [
+                    CircularProgressIndicator(),
+                    Text('register.please_wait'.tr())
+                  ],
+                )
+              : Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    CustomTextField(
+                      controller: firstnameController,
+                      width: MediaQuery.of(context).size.width * .42,
+                      hint: 'register.hint_first_name'.tr(),
+                      title: 'register.first_name'.tr(),
+                      keyboardType: TextInputType.text,
+                    ),
+                    CustomTextField(
+                      controller: lastnameController,
+                      width: MediaQuery.of(context).size.width * .42,
+                      hint: 'register.hint_last_name'.tr(),
+                      title: 'register.last_name'.tr(),
+                      keyboardType: TextInputType.text,
+                    ),
+                  ],
+                ),
+          SizedBox(height: 15),
+          CustomTextField(
+            controller: emailController,
+            width: MediaQuery.of(context).size.width,
+            hint: 'register.hint_email'.tr(),
+            title: 'register.email'.tr(),
+            keyboardType: TextInputType.emailAddress,
+          ),
+          SizedBox(height: 15),
+          CustomTextField(
+            controller: passwordController,
+            width: MediaQuery.of(context).size.width,
+            isPassword: true,
+            hint: 'register.enter_password'.tr(),
+            title: 'register.password'.tr(),
+            keyboardType: TextInputType.text,
+          ),
+          SizedBox(height: 15),
+          CustomTextField(
+            controller: confirmpasswordController,
+            width: MediaQuery.of(context).size.width,
+            isPassword: true,
+            hint: 'register.hint_confirm_password'.tr(),
+            title: 'register.confirm_password'.tr(),
+            keyboardType: TextInputType.text,
+          ),
+          SizedBox(height: 15),
+        ],
+      ),
     );
   }
 }

@@ -73,6 +73,4 @@ class Auth {
     }
   }
 }
-
-// Example usage of signInWithPhone with callbacks:
-
+ 

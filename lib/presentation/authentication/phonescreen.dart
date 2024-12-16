@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:pocketwise/repository/auth/firebase_auth.dart';
 import 'package:pocketwise/router/approuter.dart';
 import 'package:pocketwise/utils/widgets/authentication/phoneField.dart';
-
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../utils/constants/customsnackbar.dart';
 import '../../utils/widgets/authentication/authpages.dart';
 
@@ -16,9 +16,12 @@ class PhoneScreen extends StatefulWidget {
 }
 
 class _PhoneScreenState extends State<PhoneScreen> {
+     Auth auth = Auth(); 
   bool validphone = false;
-
+  bool isLoading = false;   
   String phoneNum = "";
+  TextEditingController phoneController = TextEditingController();  
+
   validatePhone(String phone) {
     if (phone.length != 9) {
       setState(() {
@@ -34,33 +37,50 @@ class _PhoneScreenState extends State<PhoneScreen> {
     return null;
   }
 
+  Future<void> _savePhone(String phoneN) async {
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    await prefs.setString('phone', phoneN);
+  }
+
+  void initiateSignIn() {
+    validatePhone(phoneController.text);
+    if (validphone) {
+      _savePhone(phoneNum);
+      setState(() {
+        isLoading = true;  
+      });
+      auth.signInWithPhone(
+        phoneNum,
+        context,
+        (verificationId, resendToken) {
+          setState(() {
+            isLoading = false;  
+          });
+          Navigator.pushNamed(context, AppRouter.otpscreen, arguments: verificationId);
+        },
+        (errorMessage) {
+          setState(() {
+            isLoading = false;  
+          });
+          showCustomSnackbar(context, errorMessage);
+        },
+      );
+    } else {
+      showCustomSnackbar(context, 'Please enter a valid phone number (9 digits)');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    TextEditingController phoneController = TextEditingController();
-    Auth auth = Auth();
     return AuthPageManager(
       pagetitle: 'register.register'.tr(),
-      onButtonPressed: () {
-        validatePhone(phoneController.text);
-        if (validphone) {
-          auth.signInWithPhone(
-            phoneNum,
-            context,
-            (verificationId, resendToken) => Navigator.pushNamed(
-                context, AppRouter.otpscreen,
-                arguments: verificationId),
-            (errorMessage) => showCustomSnackbar(context, errorMessage),
-          );
-        } else {
-          showCustomSnackbar(
-              context, 'Please enter a valid phone number (9 digits)');
-        }
-      },
+      onButtonPressed: initiateSignIn,
       buttontext: "home.continue".tr(),
       pagedescription: "register.description".tr(),
       children: Column(
         children: [
           Phonefield(phoneController: phoneController),
+          isLoading ? CircularProgressIndicator() : Container(), // Show loader when `isLoading` is true
         ],
       ),
     );
