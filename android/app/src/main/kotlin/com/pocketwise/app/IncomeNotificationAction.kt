@@ -24,7 +24,7 @@ class IncomeNotificationAction : BroadcastReceiver() {
                 hasAdded = true,
                 userId = "$userId"
             )
-            SaveToFirebase().saveTransaction(transaction)
+            SaveToFirebase().saveIncome(transaction)
             Log.d("IncomeNotificationAction", "Transaction saved: Action: $action, Amount: $amount, Sender: $sender, User ID: $userId")
         } else {
             Log.d("IncomeNotificationAction", "Transaction not saved: User declined")

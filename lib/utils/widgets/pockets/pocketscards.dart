@@ -19,18 +19,16 @@ class ExpenseCard extends StatelessWidget {
   // String fundedStatus;
   // String category;
   // Color categoryColor;
-    ExpenseCard({
-      required this.expenseModel, 
-    super.key});
-  
-   @override
-   Widget build(BuildContext context) {
-    return GestureDetector(
-       onTap: () {
-          print('View Pocket');
-            Navigator.pushNamed(context, AppRouter.viewPocket, arguments: expenseModel);
+  ExpenseCard({required this.expenseModel, super.key});
 
-          },
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: () {
+        print('View Pocket');
+        Navigator.pushNamed(context, AppRouter.viewPocket,
+            arguments: expenseModel);
+      },
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 5),
         child: Container(
@@ -53,60 +51,55 @@ class ExpenseCard extends StatelessWidget {
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                         
                           Align(
                               alignment: Alignment.topLeft,
-                              child: Text(expenseModel!.title).normal()),
+                              child: Text(expenseModel!.sender.split(' ').first)
+                                  .normal()),
                         ],
                       ),
-                      
                       Column(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                            
                           Align(
                             alignment: Alignment.topRight,
-                          
-                                child: RichText(
-                                  text: TextSpan(
-                                    children: <TextSpan>[
-                                      TextSpan(
-                                        text:  expenseModel!.amount.toString() ,
-                                        style: AppTextStyles.normal.copyWith(fontWeight: FontWeight.bold),
-                                      ),
-                                      TextSpan(
-                                        text: 'kes',
-                                        style: AppTextStyles.normal,
-                                      ),
-                                    ],
+                            child: RichText(
+                              text: TextSpan(
+                                children: <TextSpan>[
+                                  TextSpan(
+                                    text: expenseModel!.amount.toString(),
+                                    style: AppTextStyles.normal
+                                        .copyWith(fontWeight: FontWeight.bold),
                                   ),
-                                ),
+                                  TextSpan(
+                                    text: 'kes',
+                                    style: AppTextStyles.normal,
+                                  ),
+                                ],
                               ),
+                            ),
+                          ),
                         ],
                       ),
                     ],
                   ),
-                 Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                   children: [
-                    
-        
-                     CardButtons(cardColor: getColor(expenseModel!.pocket), text: expenseModel!.pocket!, small: true),
-                    
-                               Align(
-                              alignment: Alignment.bottomRight,
-                              child: Text(
-                               expenseModel!.date, style: AppTextStyles.smallLight.copyWith(
-                                
-                                
-                                color: secondaryColor,
-                                
-                              ),)
-                              ),
-                   ],
-                 )
-                ]
-                ),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      CardButtons(
+                          cardColor: getColor(expenseModel!.category),
+                          text: expenseModel!.category!,
+                          small: true),
+                      Align(
+                          alignment: Alignment.bottomRight,
+                          child: Text(
+                            expenseModel!.dateCreated,
+                            style: AppTextStyles.smallLight.copyWith(
+                              color: secondaryColor,
+                            ),
+                          )),
+                    ],
+                  )
+                ]),
           ),
         ),
       ),

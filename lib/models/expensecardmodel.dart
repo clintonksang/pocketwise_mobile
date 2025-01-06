@@ -1,40 +1,49 @@
 import 'package:flutter/foundation.dart';
 
 class ExpenseModel {
-  final String id;
-  final double amount;
-  final String date; // Store date as String (e.g., 'yyyy-MM-dd')
-  final String title;
-  final String pocket;
+  final String amount;
+  final String
+      dateCreated; // Store date as String (e.g., 'yyyy-MM-dd HH:mm:ss')
+  final String category;
+
+  final bool hasAdded;
+  final String sender;
+  final String type;
+  final String userId;
 
   ExpenseModel({
-    required this.id,
     required this.amount,
-    required this.date,
-    required this.title,
-    required this.pocket,
+    required this.category,
+    required this.dateCreated,
+    required this.hasAdded,
+    required this.sender,
+    required this.type,
+    required this.userId,
   });
 
-  // Convert a Transaction object to a Map
+  // Convert an ExpenseModel object to a Map
   Map<String, dynamic> toMap() {
     return {
-      'id': id,
       'amount': amount,
-      'date': date,
-      'category': title,
-      'pocket': pocket,
+      'dateCreated': dateCreated,
+      'category': category,
+      'hasAdded': hasAdded,
+      'sender': sender,
+      'type': type,
+      'userId': userId,
     };
   }
 
-  // Create a Transaction from a Map
+  // Create an ExpenseModel from a Map
   factory ExpenseModel.fromMap(Map<String, dynamic> map) {
     return ExpenseModel(
-      id: map['id'],
-      amount: map['amount'],
-      date: map['date'],
-      title: map['category'],
-      pocket: map['pocket'],
+      amount: map['amount'].toString(),
+      dateCreated: map['dateCreated'],
+      category: map['category'],
+      hasAdded: map['hasAdded'],
+      sender: map['sender'],
+      type: map['type'],
+      userId: map['userId'],
     );
   }
 }
-

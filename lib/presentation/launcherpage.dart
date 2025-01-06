@@ -1,11 +1,13 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import 'package:logger/web.dart';
 import 'package:pocketwise/router/approuter.dart';
 import 'package:pocketwise/utils/constants/colors.dart';
 import 'package:pocketwise/utils/constants/customAppBar.dart';
 import 'package:pocketwise/utils/constants/defaultPadding.dart';
 import 'package:pocketwise/utils/globals.dart';
 import 'package:pocketwise/utils/widgets/pockets/customElevatedButton.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:video_player/video_player.dart';
 
 import '../utils/constants/textutil.dart';
@@ -20,11 +22,25 @@ class Launcher extends StatefulWidget {
 class _LauncherState extends State<Launcher> {
   late VideoPlayerController _controller;
   late Future<void> _initializeVideoPlayerFuture;
+  checkifLoggedIn() async {
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    if (prefs.getBool('isLoggedIn') != null) {
+      Logger().i('User is logged in');
+      final phone = prefs.getString('phone') ?? '';
+      Navigator.pushNamed(context, AppRouter.pagemanager);
+      _controller.dispose();
+      saveUserIDToNative(phone);
+    } else {
+      Logger().i('User is not logged in');
+
+      saveUserIDToNative("");
+    }
+  }
 
   @override
   void initState() {
     super.initState();
-    saveUserIDToNative(""); // IF USER IS NOT LOGGED IN, SET USERID TO EMPTY
+    checkifLoggedIn();
 
     _controller = VideoPlayerController.asset("assets/videos/intro.mp4");
     _initializeVideoPlayerFuture = _controller.initialize().then((_) {

@@ -46,6 +46,8 @@ class Pockets extends StatefulWidget {
 class _PocketsState extends State<Pockets> {
   final ScrollController _scrollController = ScrollController();
   bool _isFabExpanded = false;
+  final ExpenseRepository expenseRepository = ExpenseRepository();
+  late Future<List<ExpenseModel>> _futureExpenses;
 
   double totalIncome = 0.0;
 
@@ -60,8 +62,6 @@ class _PocketsState extends State<Pockets> {
   CategoriesModel? savingsInvestmentsCategory;
   CategoriesModel? debtCategory;
 
-
-
   int selectedbutton = 1;
   String selectedButtonText = 'budget';
 
@@ -70,6 +70,8 @@ class _PocketsState extends State<Pockets> {
     super.initState();
     _scrollController.addListener(_toggleFabExpansion);
     _initializeData();
+    _futureExpenses = expenseRepository.getTransactionsSortedByDate();
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
       // showTutorial(context);
       setState(() {
@@ -81,16 +83,12 @@ class _PocketsState extends State<Pockets> {
 
   Future<void> _initializeData() async {
     await _loadTotalIncome();
- 
   }
-
- 
-
 
   // Call this function if data needs refreshing, like after a save operation
   reload() async {
     // await _loadPocketCategories();
-    _loadTotalIncome(); 
+    _loadTotalIncome();
   }
 
   Future<void> _loadPocketTotals() async {
@@ -225,8 +223,9 @@ class _PocketsState extends State<Pockets> {
   @override
   Widget build(BuildContext context) {
     BudgetRepository budgetRepository = BudgetRepository();
-        var incomeProvider = Provider.of<IncomeProvider>(context);
-        budgetRepository.initializeCategories(incomeProvider.getTotalIncome(), context);
+    var incomeProvider = Provider.of<IncomeProvider>(context);
+    budgetRepository.initializeCategories(
+        incomeProvider.getTotalIncome(), context);
 
     return Scaffold(
       backgroundColor: backgroundColor,
@@ -255,7 +254,9 @@ class _PocketsState extends State<Pockets> {
                           Spacer(),
                           IconButton(
                             onPressed: () {
-                         Provider.of<IncomeProvider>(context, listen: false).clearAllIncomes();
+                              Provider.of<IncomeProvider>(context,
+                                      listen: false)
+                                  .clearAllIncomes();
                             },
                             icon: Image.asset('assets/images/bell.png',
                                 width: 24, height: 24, color: Colors.black),
@@ -328,66 +329,81 @@ class _PocketsState extends State<Pockets> {
                           ).largeBold(),
                         ),
                       ),
-                      SizedBox(height: 5),
-                      budgetAndTracker(),
+
                       SizedBox(height: heightPadding),
-                      Container(
-                        width: MediaQuery.of(context).size.width,
-                        height: selectedButtonText != 'budget'? MediaQuery.of(context).size.height * .32 : MediaQuery.of(context).size.height * .46,
-                        decoration: ShapeDecoration(
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(18.0),
-                          ),
-                          color: white,
-                        ),
-                        child: Padding(
-                          padding: const EdgeInsets.all(8.0),
-                          child: selectedButtonText == 'budget'
-                              ? BudgetCard(
-                                hasBudget : false
-                              )
-                              : 
-                              ListView.builder(
-                                scrollDirection: Axis.horizontal,
-                                itemCount: selectedItems.length,
-                                itemBuilder: (context, index) {
-                                  return TrackerCard(
-                                    key: selectedItems[index].key,
-                                    categoriesModel: selectedItems[index],
-                                  );
-                                },
-                              )
-                              // Row(
-                              //     children: [
-                              //       TrackerCard(
-                              //           key: needsKey,
-                              //           categoriesModel: needsCategory),
-                              //       TrackerCard(
-                              //           key: wantsKey,
-                              //           categoriesModel: wantsCategory),
-                              //       TrackerCard(
-                              //           key: savingsInvestmentsKey,
-                              //           categoriesModel:
-                              //               savingsInvestmentsCategory),
-                              //       TrackerCard(
-                              //           key: debtKey,
-                              //           categoriesModel: debtCategory),
-                              //     ],
-                              //   ),
-                        ),
-                      ),
-                      SizedBox(height: heightPadding),
-                      selectedButtonText != 'budget'? Padding(
-                        padding: const EdgeInsets.only(top: 5),
-                        child: Align(
-                          alignment: Alignment.centerLeft,
-                          child: Text(
-                            'home.transactions'.tr(),
-                          ).largeBold(),
-                        ),
-                      ) : SizedBox(height: 0),
-                      selectedButtonText != 'budget'?ExpenseList() :
-                      SizedBox(height: 0),
+                      ExpenseList(futureExpenses: _futureExpenses),
+                      // Container(
+                      //   width: MediaQuery.of(context).size.width,
+                      //   height: MediaQuery.of(context).size.height * .46,
+                      //   decoration: ShapeDecoration(
+                      //     shape: RoundedRectangleBorder(
+                      //       borderRadius: BorderRadius.circular(18.0),
+                      //     ),
+                      //     color: white,
+                      //   ),
+                      // ),
+
+                      // budgetAndTracker(),
+
+                      // Container(
+                      //   width: MediaQuery.of(context).size.width,
+                      //   height: selectedButtonText != 'budget'
+                      //       ? MediaQuery.of(context).size.height * .32
+                      //       : MediaQuery.of(context).size.height * .46,
+                      //   decoration: ShapeDecoration(
+                      //     shape: RoundedRectangleBorder(
+                      //       borderRadius: BorderRadius.circular(18.0),
+                      //     ),
+                      //     color: white,
+                      //   ),
+                      //   child: Padding(
+                      //       padding: const EdgeInsets.all(8.0),
+                      //       child: selectedButtonText == 'budget'
+                      //           ? BudgetCard(hasBudget: false)
+                      //           : ListView.builder(
+                      //               scrollDirection: Axis.horizontal,
+                      //               itemCount: selectedItems.length,
+                      //               itemBuilder: (context, index) {
+                      //                 return TrackerCard(
+                      //                   key: selectedItems[index].key,
+                      //                   categoriesModel: selectedItems[index],
+                      //                 );
+                      //               },
+                      //             )
+                      // Row(
+                      //     children: [
+                      //       TrackerCard(
+                      //           key: needsKey,
+                      //           categoriesModel: needsCategory),
+                      //       TrackerCard(
+                      //           key: wantsKey,
+                      //           categoriesModel: wantsCategory),
+                      //       TrackerCard(
+                      //           key: savingsInvestmentsKey,
+                      //           categoriesModel:
+                      //               savingsInvestmentsCategory),
+                      //       TrackerCard(
+                      //           key: debtKey,
+                      //           categoriesModel: debtCategory),
+                      //     ],
+                      //   ),
+                      // ),
+                      // ),
+                      // SizedBox(height: heightPadding),
+                      // selectedButtonText != 'budget'
+                      //     ? Padding(
+                      //         padding: const EdgeInsets.only(top: 5),
+                      //         child: Align(
+                      //           alignment: Alignment.centerLeft,
+                      //           child: Text(
+                      //             'home.transactions'.tr(),
+                      //           ).largeBold(),
+                      //         ),
+                      //       )
+                      //     : SizedBox(height: 0),
+                      // selectedButtonText != 'budget'
+                      //     ? ExpenseList()
+                      //     : SizedBox(height: 0),
                     ],
                   ),
                 ),
@@ -438,12 +454,15 @@ class _PocketsState extends State<Pockets> {
 }
 
 class ExpenseList extends StatelessWidget {
-  final ExpenseRepository expenseRepository = ExpenseRepository();
+  // final ExpenseRepository expenseRepository = ExpenseRepository();
+  final Future<List<ExpenseModel>> futureExpenses;
+
+  const ExpenseList({super.key, required this.futureExpenses});
 
   @override
   Widget build(BuildContext context) {
     return FutureBuilder<List<ExpenseModel>>(
-      future: expenseRepository.getAllTransactions(),
+      future: futureExpenses,
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return Center(child: CircularProgressIndicator());

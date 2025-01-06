@@ -126,6 +126,9 @@ class _LoginState extends State<Login> {
               .doc(phoneFromCache)
               .update({"verified": true});
           saveUserIDToNative(phoneFromCache);
+        // save isloggedin to shared preferences
+        final SharedPreferences prefs = await SharedPreferences.getInstance();
+        prefs.setBool('isLoggedIn', true);
 
           Navigator.pushNamed(context, AppRouter.pagemanager);
         } else {

@@ -16,20 +16,25 @@ class ExpenseNotificationAction : BroadcastReceiver() {
         val sender = intent.getStringExtra("sender") ?: "Unknown sender"
 
         if (action != "Unknown action") {
-            val transaction = TransactionModel(
-                type = "expense",
-                amount = amount,
-                sender = sender,
-                category = action,
-                hasAdded = true,
-                userId =  "$userId"
+            val transaction =
+                    TransactionModel(
+                            type = "expense",
+                            amount = amount,
+                            sender = sender,
+                            category = action,
+                            hasAdded = true,
+                            userId = "$userId"
+                    )
+            SaveToFirebase().saveExpense(transaction)
+            Log.d(
+                    "ExpenseNotificationAction",
+                    "Transaction saved: Action: $action, Amount: $amount, Sender: $sender, User ID: $userId"
             )
-            SaveToFirebase().saveTransaction(transaction)
-            Log.d("ExpenseNotificationAction", "Transaction saved: Action: $action, Amount: $amount, Sender: $sender, User ID: $userId")
         }
 
         // Dismiss the notification
-        val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        val notificationManager =
+                context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         notificationManager.cancel(2)
     }
 }

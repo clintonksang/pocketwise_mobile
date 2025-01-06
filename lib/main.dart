@@ -12,6 +12,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:pocketwise/firebase_options.dart';
 import 'package:pocketwise/provider/category_provider.dart';
 import 'package:pocketwise/provider/dropdown_provider.dart';
+import 'package:pocketwise/provider/expense_provider.dart';
 import 'package:pocketwise/repository/auth/firebase_auth.dart';
 import 'package:provider/provider.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -44,6 +45,7 @@ void main() {
       child: MultiProvider(
         providers: [
           ChangeNotifierProvider(create: (context) => IncomeProvider()),
+          ChangeNotifierProvider(create: (context) => ExpenseProvider()),
           ChangeNotifierProvider(create: (context) => BudgetRepository()),
           ChangeNotifierProvider(create: (context) => BudgetLimits()),
           ChangeNotifierProvider(create: (_) => DropdownProvider()),
