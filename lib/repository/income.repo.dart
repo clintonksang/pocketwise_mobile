@@ -106,6 +106,8 @@ class IncomeRepository {
     }
 
     return [];
+
+    // Get income from Firebase
   }
 
 // Clear all transactions

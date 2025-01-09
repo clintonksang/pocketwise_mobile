@@ -29,7 +29,7 @@ class ExpenseProvider with ChangeNotifier {
   }
 
   void loadExpensesSortedByDate() async {
-    _expenses = await _expenseRepository.getTransactionsSortedByDate();
+    _expenses = await _expenseRepository.getAllTransactions();
     notifyListeners();
   }
 

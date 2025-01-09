@@ -20,7 +20,7 @@ class OtpScreen extends StatelessWidget {
       pagedescription: "register.enter_otp".tr(),
       children: SingleChildScrollView(
         child: Container(
-          height: MediaQuery.of(context).size.height * .8,
+          height: MediaQuery.of(context).size.height * .6,
           child: Column(
             children: [OTPField(verificationId: verificationCode)],
           ),

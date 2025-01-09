@@ -45,8 +45,7 @@ class ExpenseRepository {
 
   // Get all transactions from Shared Preferences
   Future<List<ExpenseModel>> getAllTransactions() async {
-    //  .collection('users')
-    //       .doc(userId)
+    
     final prefs = await SharedPreferences.getInstance();
     final String? userId = prefs.getString('phone') ?? '';
 
@@ -75,6 +74,8 @@ class ExpenseRepository {
 
     // return [];
   }
+ 
+   
 
   Future<void> saveExpensestoFirebase(ExpenseModel expenseModel) async {
     final prefs = await SharedPreferences.getInstance();

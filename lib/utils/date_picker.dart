@@ -1,6 +1,3 @@
-
- 
-
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 
@@ -109,17 +106,7 @@ class ReusableDatePickerForm extends StatelessWidget {
     }
   }
 
-  String _formatDate(DateTime date) {
-    DateTime today = DateTime.now();
-    DateTime yesterday = today.subtract(Duration(days: 1));
-
-    if (DateUtils.isSameDay(date, today)) {
-      return "Today";
-    } else if (DateUtils.isSameDay(date, yesterday)) {
-      return "Yesterday";
-    } else {
-      return DateFormat('yyyy-MM-dd').format(date);
-    }
+  _formatDate(DateTime date) {
+    return DateFormat('yyyy-MM-dd').format(date);
   }
 }
- 
