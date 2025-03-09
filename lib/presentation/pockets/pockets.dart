@@ -48,6 +48,7 @@ class _PocketsState extends State<Pockets> {
   bool _isFabExpanded = false;
   final ExpenseRepository expenseRepository = ExpenseRepository();
   late Future<List<ExpenseModel>> _futureExpenses;
+  DateTime? _lastBackPressTime;
 
   double totalIncome = 0.0;
 
@@ -220,6 +221,22 @@ class _PocketsState extends State<Pockets> {
     tutorialCoachMark.show(context: context);
   }
 
+  Future<bool> _onWillPop() async {
+    final now = DateTime.now();
+    if (_lastBackPressTime == null ||
+        now.difference(_lastBackPressTime!) > Duration(seconds: 2)) {
+      _lastBackPressTime = now;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Press back again to exit'),
+          duration: Duration(seconds: 2),
+        ),
+      );
+      return false;
+    }
+    return true;
+  }
+
   @override
   Widget build(BuildContext context) {
     BudgetRepository budgetRepository = BudgetRepository();
@@ -227,225 +244,229 @@ class _PocketsState extends State<Pockets> {
     budgetRepository.initializeCategories(
         incomeProvider.getTotalIncome(), context);
 
-    return Scaffold(
-      backgroundColor: backgroundColor,
-      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
-      body: SafeArea(
-        child: RefreshIndicator(
-          onRefresh: () {
-            return reload();
-          },
-          child: Stack(
-            children: [
-              SingleChildScrollView(
-                controller: _scrollController,
-                child: Container(
-                  margin: const EdgeInsets.only(
-                      left: defaultPadding,
-                      right: defaultPadding,
-                      top: defaultPadding),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.start,
-                    children: [
-                      SizedBox(height: defaultPadding),
-                      Row(
-                        children: [
-                          Toptext(),
-                          Spacer(),
-                          IconButton(
-                            onPressed: () {
-                              Provider.of<IncomeProvider>(context,
-                                      listen: false)
-                                  .clearAllIncomes();
-                            },
-                            icon: Image.asset('assets/images/bell.png',
-                                width: 24, height: 24, color: Colors.black),
-                          ),
-                          CircleAvatar(
-                            backgroundColor: black,
-                            radius: 24,
-                            child: Text(
-                              'CS',
-                              style: AppTextStyles.normal
-                                  .copyWith(color: Colors.white),
+    return WillPopScope(
+      onWillPop: _onWillPop,
+      child: Scaffold(
+        backgroundColor: backgroundColor,
+        floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
+        body: SafeArea(
+          child: RefreshIndicator(
+            onRefresh: () {
+              return reload();
+            },
+            child: Stack(
+              children: [
+                SingleChildScrollView(
+                  controller: _scrollController,
+                  child: Container(
+                    margin: const EdgeInsets.only(
+                        left: defaultPadding,
+                        right: defaultPadding,
+                        top: defaultPadding),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.start,
+                      children: [
+                        SizedBox(height: defaultPadding),
+                        Row(
+                          children: [
+                            Toptext(),
+                            Spacer(),
+                            IconButton(
+                              onPressed: () {
+                                Provider.of<IncomeProvider>(context,
+                                        listen: false)
+                                    .clearAllIncomes();
+                              },
+                              icon: Image.asset('assets/images/bell.png',
+                                  width: 24, height: 24, color: Colors.black),
                             ),
-                          )
-                        ],
-                      ),
-                      SizedBox(height: defaultPadding),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          GestureDetector(
-                            onTap: () => Navigator.pushNamed(
-                                context, AppRouter.add_income),
-                            child: StreamBuilder<double>(
-                              stream: incomeProvider.totalIncomeStream,
+                            CircleAvatar(
+                              backgroundColor: black,
+                              radius: 24,
+                              child: Text(
+                                'CS',
+                                style: AppTextStyles.normal
+                                    .copyWith(color: Colors.white),
+                              ),
+                            )
+                          ],
+                        ),
+                        SizedBox(height: defaultPadding),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            GestureDetector(
+                              onTap: () => Navigator.pushNamed(
+                                  context, AppRouter.add_income),
+                              child: StreamBuilder<double>(
+                                stream: incomeProvider.totalIncomeStream,
+                                builder: (context, snapshot) {
+                                  if (!snapshot.hasData) {
+                                    return MainCard(
+                                      titleText: 'home.income'.tr(),
+                                      amount: "0.00",
+                                      currency: 'kes',
+                                      cardcolor: black,
+                                      buttonText: 'home.add_income'.tr(),
+                                    );
+                                  } else {
+                                    return MainCard(
+                                      titleText: 'home.income'.tr(),
+                                      amount:
+                                          "${snapshot.data?.toStringAsFixed(2) ?? "0.00"}",
+                                      currency: 'kes',
+                                      cardcolor: black,
+                                      buttonText: 'home.add_income'.tr(),
+                                    );
+                                  }
+                                },
+                              ),
+                            ),
+                            StreamBuilder<double>(
+                              stream: expenseRepository.expenseStream,
                               builder: (context, snapshot) {
-                                if (!snapshot.hasData) {
-                                  return MainCard(
-                                    titleText: 'home.income'.tr(),
-                                    amount: "0.00",
-                                    currency: 'kes',
-                                    cardcolor: black,
-                                    buttonText: 'home.add_income'.tr(),
-                                  );
-                                } else {
-                                  return MainCard(
-                                    titleText: 'home.income'.tr(),
-                                    amount:
-                                        "${snapshot.data?.toStringAsFixed(2) ?? "0.00"}",
-                                    currency: 'kes',
-                                    cardcolor: black,
-                                    buttonText: 'home.add_income'.tr(),
-                                  );
-                                }
+                                double totalExpense = snapshot.data ?? 0.0;
+                                return MainCard(
+                                  titleText: 'home.expense'.tr(),
+                                  amount: totalExpense.toStringAsFixed(2),
+                                  currency: 'kes',
+                                  subtext: "75",
+                                  cardcolor: primaryColor,
+                                  buttonText: 'home.add_expense'.tr(),
+                                );
                               },
                             ),
+                          ],
+                        ),
+                        SizedBox(height: heightPadding),
+                        Padding(
+                          padding: const EdgeInsets.only(top: 5),
+                          child: Align(
+                            alignment: Alignment.centerLeft,
+                            child: Text(
+                              'home.pockets'.tr(),
+                            ).largeBold(),
                           ),
-                          StreamBuilder<double>(
-                            stream: expenseRepository.expenseStream,
-                            builder: (context, snapshot) {
-                              double totalExpense = snapshot.data ?? 0.0;
-                              return MainCard(
-                                titleText: 'home.expense'.tr(),
-                                amount: totalExpense.toStringAsFixed(2),
-                                currency: 'kes',
-                                subtext: "75",
-                                cardcolor: primaryColor,
-                                buttonText: 'home.add_expense'.tr(),
-                              );
-                            },
-                          ),
-                        ],
-                      ),
-                      SizedBox(height: heightPadding),
-                      Padding(
-                        padding: const EdgeInsets.only(top: 5),
-                        child: Align(
-                          alignment: Alignment.centerLeft,
-                          child: Text(
-                            'home.pockets'.tr(),
-                          ).largeBold(),
                         ),
-                      ),
 
-                      SizedBox(height: heightPadding),
-                      ExpenseList(futureExpenses: _futureExpenses),
-                      // Container(
-                      //   width: MediaQuery.of(context).size.width,
-                      //   height: MediaQuery.of(context).size.height * .46,
-                      //   decoration: ShapeDecoration(
-                      //     shape: RoundedRectangleBorder(
-                      //       borderRadius: BorderRadius.circular(18.0),
-                      //     ),
-                      //     color: white,
-                      //   ),
-                      // ),
+                        SizedBox(height: heightPadding),
+                        ExpenseList(futureExpenses: _futureExpenses),
+                        // Container(
+                        //   width: MediaQuery.of(context).size.width,
+                        //   height: MediaQuery.of(context).size.height * .46,
+                        //   decoration: ShapeDecoration(
+                        //     shape: RoundedRectangleBorder(
+                        //       borderRadius: BorderRadius.circular(18.0),
+                        //     ),
+                        //     color: white,
+                        //   ),
+                        // ),
 
-                      // budgetAndTracker(),
+                        // budgetAndTracker(),
 
-                      // Container(
-                      //   width: MediaQuery.of(context).size.width,
-                      //   height: selectedButtonText != 'budget'
-                      //       ? MediaQuery.of(context).size.height * .32
-                      //       : MediaQuery.of(context).size.height * .46,
-                      //   decoration: ShapeDecoration(
-                      //     shape: RoundedRectangleBorder(
-                      //       borderRadius: BorderRadius.circular(18.0),
-                      //     ),
-                      //     color: white,
-                      //   ),
-                      //   child: Padding(
-                      //       padding: const EdgeInsets.all(8.0),
-                      //       child: selectedButtonText == 'budget'
-                      //           ? BudgetCard(hasBudget: false)
-                      //           : ListView.builder(
-                      //               scrollDirection: Axis.horizontal,
-                      //               itemCount: selectedItems.length,
-                      //               itemBuilder: (context, index) {
-                      //                 return TrackerCard(
-                      //                   key: selectedItems[index].key,
-                      //                   categoriesModel: selectedItems[index],
-                      //                 );
-                      //               },
-                      //             )
-                      // Row(
-                      //     children: [
-                      //       TrackerCard(
-                      //           key: needsKey,
-                      //           categoriesModel: needsCategory),
-                      //       TrackerCard(
-                      //           key: wantsKey,
-                      //           categoriesModel: wantsCategory),
-                      //       TrackerCard(
-                      //           key: savingsInvestmentsKey,
-                      //           categoriesModel:
-                      //               savingsInvestmentsCategory),
-                      //       TrackerCard(
-                      //           key: debtKey,
-                      //           categoriesModel: debtCategory),
-                      //     ],
-                      //   ),
-                      // ),
-                      // ),
-                      // SizedBox(height: heightPadding),
-                      // selectedButtonText != 'budget'
-                      //     ? Padding(
-                      //         padding: const EdgeInsets.only(top: 5),
-                      //         child: Align(
-                      //           alignment: Alignment.centerLeft,
-                      //           child: Text(
-                      //             'home.transactions'.tr(),
-                      //           ).largeBold(),
-                      //         ),
-                      //       )
-                      //     : SizedBox(height: 0),
-                      // selectedButtonText != 'budget'
-                      //     ? ExpenseList()
-                      //     : SizedBox(height: 0),
-                    ],
-                  ),
-                ),
-              ),
-              if (_showAddButtons)
-                Align(
-                  alignment: Alignment.bottomCenter,
-                  child: AnimatedOpacity(
-                    duration: Duration(milliseconds: 300),
-                    opacity: _showAddButtons ? 1.0 : 0.0,
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Incomeexpensebuttons(
-                          label: 'add income',
-                          iconPath: 'assets/images/income_arrow.png',
-                          backgroundColor: Colors.black,
-                          onTap: () {
-                            Navigator.pushNamed(context, AppRouter.add_income);
-                          },
-                        ),
-                        SizedBox(
-                          width: 10,
-                        ),
-                        Incomeexpensebuttons(
-                          label: 'add expense',
-                          iconPath: 'assets/images/expense_arrow.png',
-                          backgroundColor: primaryColor,
-                          onTap: () async {
-                            final result = await Navigator.pushNamed(
-                                context, AppRouter.addExpense);
-                            if (result == 'added') {
-                              _loadTotalIncome();
-                              _loadPocketTotals();
-                            }
-                          },
-                        ),
+                        // Container(
+                        //   width: MediaQuery.of(context).size.width,
+                        //   height: selectedButtonText != 'budget'
+                        //       ? MediaQuery.of(context).size.height * .32
+                        //       : MediaQuery.of(context).size.height * .46,
+                        //   decoration: ShapeDecoration(
+                        //     shape: RoundedRectangleBorder(
+                        //       borderRadius: BorderRadius.circular(18.0),
+                        //     ),
+                        //     color: white,
+                        //   ),
+                        //   child: Padding(
+                        //       padding: const EdgeInsets.all(8.0),
+                        //       child: selectedButtonText == 'budget'
+                        //           ? BudgetCard(hasBudget: false)
+                        //           : ListView.builder(
+                        //               scrollDirection: Axis.horizontal,
+                        //               itemCount: selectedItems.length,
+                        //               itemBuilder: (context, index) {
+                        //                 return TrackerCard(
+                        //                   key: selectedItems[index].key,
+                        //                   categoriesModel: selectedItems[index],
+                        //                 );
+                        //               },
+                        //             )
+                        // Row(
+                        //     children: [
+                        //       TrackerCard(
+                        //           key: needsKey,
+                        //           categoriesModel: needsCategory),
+                        //       TrackerCard(
+                        //           key: wantsKey,
+                        //           categoriesModel: wantsCategory),
+                        //       TrackerCard(
+                        //           key: savingsInvestmentsKey,
+                        //           categoriesModel:
+                        //               savingsInvestmentsCategory),
+                        //       TrackerCard(
+                        //           key: debtKey,
+                        //           categoriesModel: debtCategory),
+                        //     ],
+                        //   ),
+                        // ),
+                        // ),
+                        // SizedBox(height: heightPadding),
+                        // selectedButtonText != 'budget'
+                        //     ? Padding(
+                        //         padding: const EdgeInsets.only(top: 5),
+                        //         child: Align(
+                        //           alignment: Alignment.centerLeft,
+                        //           child: Text(
+                        //             'home.transactions'.tr(),
+                        //           ).largeBold(),
+                        //         ),
+                        //       )
+                        //     : SizedBox(height: 0),
+                        // selectedButtonText != 'budget'
+                        //     ? ExpenseList()
+                        //     : SizedBox(height: 0),
                       ],
                     ),
                   ),
                 ),
-            ],
+                if (_showAddButtons)
+                  Align(
+                    alignment: Alignment.bottomCenter,
+                    child: AnimatedOpacity(
+                      duration: Duration(milliseconds: 300),
+                      opacity: _showAddButtons ? 1.0 : 0.0,
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Incomeexpensebuttons(
+                            label: 'add income',
+                            iconPath: 'assets/images/income_arrow.png',
+                            backgroundColor: Colors.black,
+                            onTap: () {
+                              Navigator.pushNamed(
+                                  context, AppRouter.add_income);
+                            },
+                          ),
+                          SizedBox(
+                            width: 10,
+                          ),
+                          Incomeexpensebuttons(
+                            label: 'add expense',
+                            iconPath: 'assets/images/expense_arrow.png',
+                            backgroundColor: primaryColor,
+                            onTap: () async {
+                              final result = await Navigator.pushNamed(
+                                  context, AppRouter.addExpense);
+                              if (result == 'added') {
+                                _loadTotalIncome();
+                                _loadPocketTotals();
+                              }
+                            },
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+              ],
+            ),
           ),
         ),
       ),
