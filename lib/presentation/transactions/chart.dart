@@ -137,6 +137,7 @@ class BarChartSample2State extends State<BarChartSample2> {
                           child: SizedBox(
                             width: MediaQuery.of(context).size.width * 0.8,
                             child: BarChart(
+                              
                               BarChartData(
                                 maxY: _calculateMaxY(),
                                 barTouchData: BarTouchData(
