@@ -21,6 +21,9 @@ import 'package:pocketwise/utils/widgets/pockets/incomeexpensebuttons.dart';
 import 'package:pocketwise/utils/widgets/pockets/toptext.dart';
 import 'package:provider/provider.dart';
 import 'package:tutorial_coach_mark/tutorial_coach_mark.dart';
+import 'package:pocketwise/utils/widgets/pockets/month_selector.dart';
+import 'package:pocketwise/utils/constants/formatting.dart';
+import 'package:intl/intl.dart';
 
 import '../../models/pocket.model.dart';
 import '../../provider/income_provider.dart';
@@ -441,9 +444,12 @@ class _PocketsState extends State<Pockets> {
                             label: 'add income',
                             iconPath: 'assets/images/income_arrow.png',
                             backgroundColor: Colors.black,
-                            onTap: () {
-                              Navigator.pushNamed(
+                            onTap: () async {
+                              final result = await Navigator.pushNamed(
                                   context, AppRouter.add_income);
+                              if (result == 'added') {
+                                reload();
+                              }
                             },
                           ),
                           SizedBox(
@@ -475,38 +481,110 @@ class _PocketsState extends State<Pockets> {
   }
 }
 
-class ExpenseList extends StatelessWidget {
-  // final ExpenseRepository expenseRepository = ExpenseRepository();
+class ExpenseList extends StatefulWidget {
   final Future<List<ExpenseModel>> futureExpenses;
 
   const ExpenseList({super.key, required this.futureExpenses});
 
   @override
+  State<ExpenseList> createState() => _ExpenseListState();
+}
+
+class _ExpenseListState extends State<ExpenseList> {
+  DateTime selectedMonth = DateTime.now();
+  List<ExpenseModel> filteredExpenses = [];
+  double monthlyTotal = 0.0;
+  bool isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadExpensesForMonth(selectedMonth);
+  }
+
+  Future<void> _loadExpensesForMonth(DateTime month) async {
+    setState(() {
+      isLoading = true;
+    });
+
+    try {
+      final expenses = await expenseRepository.getTransactionsByMonth(month);
+      final total = await expenseRepository.getTotalExpenseByMonth(month);
+
+      if (mounted) {
+        setState(() {
+          filteredExpenses = expenses;
+          monthlyTotal = total;
+          selectedMonth = month;
+          isLoading = false;
+        });
+      }
+    } catch (e) {
+      Logger().e('Error loading expenses: $e');
+      if (mounted) {
+        setState(() {
+          isLoading = false;
+        });
+      }
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return FutureBuilder<List<ExpenseModel>>(
-      future: futureExpenses,
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return Center(child: CircularProgressIndicator());
-        } else if (snapshot.hasError) {
-          return Center(child: Text('Error: ${snapshot.error}'));
-        } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-          return Center(child: Text('No expenses found.'));
-        } else {
-          final expenses = snapshot.data!;
-          return ListView.builder(
+    return Column(
+      children: [
+        // Month selector
+        MonthSelector(
+          selectedMonth: selectedMonth,
+          onMonthSelected: _loadExpensesForMonth,
+        ),
+        SizedBox(height: heightPadding),
+
+        // Monthly total
+        Padding(
+          padding: const EdgeInsets.symmetric(vertical: 8.0),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                "Monthly Total:",
+                style: AppTextStyles.bold,
+              ),
+              Text(
+                "${toLocaleString(monthlyTotal)} kes",
+                style: AppTextStyles.bold.copyWith(
+                  color: monthlyTotal > 0 ? Colors.red : Colors.green,
+                ),
+              ),
+            ],
+          ),
+        ),
+        SizedBox(height: heightPadding),
+
+        // Expenses list
+        if (isLoading)
+          Center(child: CircularProgressIndicator())
+        else if (filteredExpenses.isEmpty)
+          Center(
+            child: Text(
+              'No expenses for ${DateFormat('MMMM yyyy').format(selectedMonth)}',
+              style: TextStyle(fontSize: 16, color: Colors.grey),
+            ),
+          )
+        else
+          ListView.builder(
             shrinkWrap: true,
             physics: NeverScrollableScrollPhysics(),
-            itemCount: expenses.length,
+            itemCount: filteredExpenses.length,
             itemBuilder: (context, index) {
-              final expense = expenses[index];
+              final expense = filteredExpenses[index];
               return Container(
-                  width: MediaQuery.of(context).size.width,
-                  child: ExpenseCard(expenseModel: expense));
+                width: MediaQuery.of(context).size.width,
+                child: ExpenseCard(expenseModel: expense),
+              );
             },
-          );
-        }
-      },
+          ),
+      ],
     );
   }
 }

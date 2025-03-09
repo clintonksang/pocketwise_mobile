@@ -5,6 +5,7 @@ import 'package:logger/logger.dart';
 import 'package:pocketwise/utils/DOCREFERENCE.DART';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/expensecardmodel.dart';
+import 'package:intl/intl.dart';
 
 class ExpenseRepository {
   ExpenseRepository() {
@@ -45,7 +46,6 @@ class ExpenseRepository {
 
   // Get all transactions from Shared Preferences
   Future<List<ExpenseModel>> getAllTransactions() async {
-    
     final prefs = await SharedPreferences.getInstance();
     final String? userId = prefs.getString('phone') ?? '';
 
@@ -74,12 +74,12 @@ class ExpenseRepository {
 
     // return [];
   }
- 
-   
 
   Future<void> saveExpensestoFirebase(ExpenseModel expenseModel) async {
     final prefs = await SharedPreferences.getInstance();
     final String? userId = prefs.getString('phone') ?? '';
+    final now = DateTime.now();
+    final formattedDate = DateFormat("yyyy-MM-dd HH:mm:ss").format(now);
 
     try {
       await _firestore
@@ -91,7 +91,7 @@ class ExpenseRepository {
         "type": "expense",
         "amount": expenseModel.amount,
         "category": expenseModel.category,
-        "dateCreated": expenseModel.dateCreated,
+        "dateCreated": formattedDate,
         "hasAdded": true,
         "sender": expenseModel.sender,
         "userId": userId,
@@ -148,5 +148,45 @@ class ExpenseRepository {
         0.0,
         (sum, transaction) =>
             double.parse(sum.toString()) + double.parse(transaction.amount));
+  }
+
+  // Get transactions by month
+  Future<List<ExpenseModel>> getTransactionsByMonth(DateTime month) async {
+    final List<ExpenseModel> transactions = await getAllTransactions();
+    final now = DateTime.now();
+
+    return transactions.where((transaction) {
+      DateTime? transactionDate;
+
+      // Handle relative dates
+      if (transaction.dateCreated.toLowerCase() == 'today') {
+        transactionDate = DateTime(now.year, now.month, now.day);
+      } else {
+        try {
+          transactionDate = DateTime.parse(transaction.dateCreated);
+        } catch (e) {
+          // If direct parse fails, try specific format
+          try {
+            final DateFormat format = DateFormat("yyyy-MM-dd HH:mm:ss");
+            transactionDate = format.parse(transaction.dateCreated);
+          } catch (e) {
+            Logger().e('Error parsing date: ${transaction.dateCreated}');
+            return false;
+          }
+        }
+      }
+
+      return transactionDate.year == month.year &&
+          transactionDate.month == month.month;
+    }).toList();
+  }
+
+  // Get total expense by month
+  Future<double> getTotalExpenseByMonth(DateTime month) async {
+    final List<ExpenseModel> transactions = await getTransactionsByMonth(month);
+    return transactions.fold(
+        0.0,
+        (total, transaction) =>
+            double.parse(total.toString()) + double.parse(transaction.amount));
   }
 }

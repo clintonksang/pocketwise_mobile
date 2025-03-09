@@ -185,7 +185,13 @@ class _AddIncomeState extends State<AddIncome> {
                   color: primaryColor,
                   text: 'pockets.save'.tr(),
                   textcolor: white,
-                  onPressed: noInternet() ? null : saveEntries,
+                  onPressed: noInternet()
+                      ? null
+                      : () {
+                          saveEntries();
+                          // Pop back to Pockets screen with refresh flag
+                          Navigator.pop(context, 'added');
+                        },
                 ),
                 Container(height: 500)
               ],
