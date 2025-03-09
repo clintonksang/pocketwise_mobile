@@ -14,13 +14,13 @@ class OtpScreen extends StatelessWidget {
     return AuthPageManager(
       pagetitle: 'register.verify_phone'.tr(),
       onButtonPressed: () {
-        Navigator.pushNamed(context, AppRouter.kycpage);
+        Navigator.pushReplacementNamed(context, AppRouter.kycpage);
       },
       buttontext: "home.continue".tr(),
       pagedescription: "register.enter_otp".tr(),
       children: SingleChildScrollView(
         child: Container(
-          height: MediaQuery.of(context).size.height * .6,
+          height: MediaQuery.of(context).size.height * .3,
           child: Column(
             children: [OTPField(verificationId: verificationCode)],
           ),

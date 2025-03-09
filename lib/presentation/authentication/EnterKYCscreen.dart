@@ -25,6 +25,38 @@ class _EnterKYCPageState extends State<EnterKYCPage> {
   final Auth auth = Auth();
   bool isLoading = false;
 
+  // Password strength indicators
+  bool hasUpperCase = false;
+  bool hasLowerCase = false;
+  bool hasSpecialChar = false;
+  bool hasMinLength = false;
+
+  @override
+  void initState() {
+    super.initState();
+    passwordController.addListener(updatePasswordStrength);
+  }
+
+  @override
+  void dispose() {
+    passwordController.removeListener(updatePasswordStrength);
+    super.dispose();
+  }
+
+  void updatePasswordStrength() {
+    setState(() {
+      final password = passwordController.text;
+      hasUpperCase = password.contains(RegExp(r'[A-Z]'));
+      hasLowerCase = password.contains(RegExp(r'[a-z]'));
+      hasSpecialChar = password.contains(RegExp(r'[!@#$%^&*(),.?":{}|<>]'));
+      hasMinLength = password.length >= 8;
+    });
+  }
+
+  bool isPasswordStrong() {
+    return hasUpperCase && hasLowerCase && hasSpecialChar && hasMinLength;
+  }
+
   Future<void> sendEmailVerification(User user) async {
     try {
       await user.sendEmailVerification();
@@ -84,7 +116,7 @@ class _EnterKYCPageState extends State<EnterKYCPage> {
 
         showCustomSnackbar(context,
             "Registration successful, Please check your email for verification.");
-        Navigator.pushNamed(context, AppRouter.login);
+        Navigator.pushReplacementNamed(context, AppRouter.login);
       }
     } catch (error) {
       showCustomSnackbar(context, "Registration failed: $error");
@@ -106,8 +138,8 @@ class _EnterKYCPageState extends State<EnterKYCPage> {
       errorMessage = 'Please enter a valid email address.';
     } else if (passwordController.text.isEmpty) {
       errorMessage = 'Please enter a password.';
-    } else if (passwordController.text.length < 8) {
-      errorMessage = 'Password must be at least 8 characters long.';
+    } else if (!isPasswordStrong()) {
+      errorMessage = 'Please ensure your password meets all requirements.';
     } else if (confirmpasswordController.text.isEmpty) {
       errorMessage = 'Please confirm your password.';
     } else if (passwordController.text != confirmpasswordController.text) {
@@ -119,6 +151,49 @@ class _EnterKYCPageState extends State<EnterKYCPage> {
     } else {
       registerUser();
     }
+  }
+
+  Widget _buildPasswordRequirements() {
+    return Container(
+      margin: EdgeInsets.only(top: 8, bottom: 15),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Password requirements:',
+            style: TextStyle(
+              fontSize: 12,
+              color: Colors.grey[600],
+            ),
+          ),
+          SizedBox(height: 4),
+          _buildRequirement('At least 8 characters', hasMinLength),
+          _buildRequirement('Contains uppercase letter', hasUpperCase),
+          _buildRequirement('Contains lowercase letter', hasLowerCase),
+          _buildRequirement('Contains special character', hasSpecialChar),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildRequirement(String text, bool isMet) {
+    return Row(
+      children: [
+        Icon(
+          isMet ? Icons.check_circle : Icons.circle_outlined,
+          size: 16,
+          color: isMet ? Colors.green : Colors.grey,
+        ),
+        SizedBox(width: 8),
+        Text(
+          text,
+          style: TextStyle(
+            fontSize: 12,
+            color: isMet ? Colors.green : Colors.grey[600],
+          ),
+        ),
+      ],
+    );
   }
 
   @override
@@ -182,6 +257,7 @@ class _EnterKYCPageState extends State<EnterKYCPage> {
             title: 'register.confirm_password'.tr(),
             keyboardType: TextInputType.text,
           ),
+          _buildPasswordRequirements(),
           SizedBox(height: 15),
         ],
       ),

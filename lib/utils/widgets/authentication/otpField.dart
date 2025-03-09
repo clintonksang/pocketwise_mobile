@@ -60,7 +60,7 @@ class _OTPFieldState extends State<OTPField> {
         await FirebaseAuth.instance.signInWithCredential(credential);
         _timer?.cancel();
 
-        Navigator.pushNamed(context, AppRouter.kycpage);
+        Navigator.pushReplacementNamed(context, AppRouter.kycpage);
       } catch (e) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text("Failed to verify OTP: $e")),

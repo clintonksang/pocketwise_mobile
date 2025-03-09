@@ -83,7 +83,8 @@ class _LauncherState extends State<Launcher> {
                     );
                   }
                 },
-              )),
+              )
+              ),
           Positioned(
             bottom: 0,
             left: 0,
