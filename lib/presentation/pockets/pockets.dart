@@ -273,9 +273,9 @@ class _PocketsState extends State<Pockets> {
                             Spacer(),
                             IconButton(
                               onPressed: () {
-                                Provider.of<IncomeProvider>(context,
-                                        listen: false)
-                                    .clearAllIncomes();
+                                // Provider.of<IncomeProvider>(context,
+                                //         listen: false)
+                                //     .clearAllIncomes();
                               },
                               icon: Image.asset('assets/images/bell.png',
                                   width: 24, height: 24, color: Colors.black),
@@ -301,6 +301,8 @@ class _PocketsState extends State<Pockets> {
                               child: StreamBuilder<double>(
                                 stream: incomeProvider.totalIncomeStream,
                                 builder: (context, snapshot) {
+                                  double totalincome = snapshot.data ?? 0.0;
+
                                   if (!snapshot.hasData) {
                                     return MainCard(
                                       titleText: 'home.income'.tr(),
@@ -312,8 +314,7 @@ class _PocketsState extends State<Pockets> {
                                   } else {
                                     return MainCard(
                                       titleText: 'home.income'.tr(),
-                                      amount:
-                                          "${snapshot.data?.toStringAsFixed(2) ?? "0.00"}",
+                                      amount: totalincome.toStringAsFixed(2),
                                       currency: 'kes',
                                       cardcolor: black,
                                       buttonText: 'home.add_income'.tr(),

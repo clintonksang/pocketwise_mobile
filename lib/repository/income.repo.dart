@@ -9,8 +9,7 @@ import '../models/income.model.dart';
 
 class IncomeRepository {
   IncomeRepository() {
-    _calculateTotalIncome();
-    getAllTransactions();
+    _initializeRepository();
   }
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
@@ -21,30 +20,15 @@ class IncomeRepository {
   // Stream for total income
   Stream<double> get incomeStream => _incomeStreamController.stream;
 
-  // Save a transaction to the Shared Preferences list
+  // Initialize repository and calculate initial total
+  Future<void> _initializeRepository() async {
+    await _calculateTotalIncome();
+    await getAllTransactions();
+  }
+
+  // Save a transaction to Firebase
   Future<void> saveTransaction(IncomeModel transaction) async {
-    final prefs = await SharedPreferences.getInstance();
-
-    // Get the existing transactions list (as a JSON string)
-    String? transactionsJson = prefs.getString(_transactionKey);
-    List<Map<String, dynamic>> transactionsList = [];
-
-    if (transactionsJson != null) {
-      List<dynamic> decodedList = jsonDecode(transactionsJson);
-      transactionsList = decodedList.cast<Map<String, dynamic>>();
-    }
-
-    // Add the new transaction to the list
-    transactionsList.add(transaction.toMap());
-
-    // Save the updated list back to Shared Preferences
-    String updatedJson = jsonEncode(transactionsList);
-    await prefs.setString(_transactionKey, updatedJson);
-
-    // save  total income to firebase(not asyncronous)
-    this.saveincometoFirebase(transaction);
-
-    print('saved items: $transactionsList');
+    await saveincometoFirebase(transaction);
     _calculateTotalIncome(); // Update stream with new total
   }
 
@@ -76,47 +60,82 @@ class IncomeRepository {
     }
   }
 
-  // Delete a transaction from the Shared Preferences list
+  // Delete a transaction from Firebase
   Future<void> deleteTransaction(String id) async {
     final prefs = await SharedPreferences.getInstance();
-    String? transactionsJson = prefs.getString(_transactionKey);
-    List<Map<String, dynamic>> transactionsList = [];
+    final String? userId = prefs.getString('phone') ?? '';
 
-    if (transactionsJson != null) {
-      List<dynamic> decodedList = jsonDecode(transactionsJson);
-      transactionsList = decodedList.cast<Map<String, dynamic>>();
+    if (userId != null && userId.isNotEmpty) {
+      try {
+        await _firestore
+            .collection('users')
+            .doc(userId)
+            .collection('incomes')
+            .doc(id)
+            .delete();
+        Logger().i('Income deleted successfully!');
+        _calculateTotalIncome(); // Update stream with new total
+      } catch (e) {
+        Logger().e('Error deleting income: $e');
+        rethrow;
+      }
     }
-
-    transactionsList.removeWhere((transaction) => transaction['id'] == id);
-
-    String updatedJson = jsonEncode(transactionsList);
-    await prefs.setString(_transactionKey, updatedJson);
-
-    _calculateTotalIncome(); // Update stream with new total
   }
 
   // Get all transactions from Shared Preferences
   Future<List<IncomeModel>> getAllTransactions() async {
     final prefs = await SharedPreferences.getInstance();
-    String? transactionsJson = prefs.getString(_transactionKey);
+    final String? userId = prefs.getString('phone') ?? '';
+    print('userId from prefs: $userId');
+    if (userId != null && userId.isNotEmpty) {
+      final QuerySnapshot snapshot = await _firestore
+          .collection('users')
+          .doc(userId)
+          .collection('incomes')
+          .get();
 
-    if (transactionsJson != null) {
-      List<dynamic> decodedList = jsonDecode(transactionsJson);
-      return decodedList.map((item) => IncomeModel.fromMap(item)).toList();
+      final List<IncomeModel> transactions = snapshot.docs.map((doc) {
+        final data = doc.data() as Map<String, dynamic>;
+        return IncomeModel(
+          id: doc.id,
+          amount: double.parse(data['amount'].toString()),
+          date: data['date'],
+          income_from: data['sender'],
+        );
+      }).toList();
+      print('INCOME transactions: $transactions');
+      return transactions;
+    } else {
+      return [];
     }
-
-    return [];
-
-    // Get income from Firebase
   }
 
-// Clear all transactions
+  // Clear all transactions from Firebase
   Future<void> clearAllTransactions() async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(
-        _transactionKey, jsonEncode([])); // Clear the stored list
-    Logger().i('All incomes cleared');
-    _calculateTotalIncome(); // Update the stream to reflect the new state
+    final String? userId = prefs.getString('phone') ?? '';
+
+    if (userId != null && userId.isNotEmpty) {
+      try {
+        final QuerySnapshot snapshot = await _firestore
+            .collection('users')
+            .doc(userId)
+            .collection('incomes')
+            .get();
+
+        final batch = _firestore.batch();
+        snapshot.docs.forEach((doc) {
+          batch.delete(doc.reference);
+        });
+
+        await batch.commit();
+        Logger().i('All incomes cleared from Firebase');
+        _calculateTotalIncome(); // Update the stream to reflect the new state
+      } catch (e) {
+        Logger().e('Error clearing incomes: $e');
+        rethrow;
+      }
+    }
   }
 
   // Get transactions sorted by date
