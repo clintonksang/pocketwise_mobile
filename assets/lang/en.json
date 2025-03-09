@@ -28,7 +28,9 @@
         "view_budget": "view budget",
         "adjust_budget": "adjust",
         "continue": "continue",
-        "get_started": "get started"
+        "get_started": "get started",
+        "income_sources": "{count} sources",
+        "view": "view"
     },
     "income": {
         "income": "income",

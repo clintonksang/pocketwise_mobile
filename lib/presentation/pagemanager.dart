@@ -29,8 +29,6 @@ class _PageManagerState extends State<PageManager> {
     super.dispose();
   }
 
- 
-
   void _onScrollChange(bool show) {
     if (_currentIndex == 0) {
       setState(() {
@@ -38,7 +36,8 @@ class _PageManagerState extends State<PageManager> {
       });
     }
   }
-    void _onPageChanged(int index) {
+
+  void _onPageChanged(int index) {
     setState(() {
       _currentIndex = index;
     });
@@ -48,18 +47,15 @@ class _PageManagerState extends State<PageManager> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: PageView(
-         controller: _pageController,
+        controller: _pageController,
         onPageChanged: _onPageChanged,
-      
-     
-    
         children: [
           Pockets(onScrollChange: _onScrollChange),
-          // TransactionsPage(),
-          SMSListener(),
+          TransactionsPage(),
+          // SMSListener(),
           Profile()
         ],
-      ), 
+      ),
       backgroundColor: backgroundColor,
       bottomNavigationBar: BottomNav(
         activeColor: primaryColor,
@@ -136,7 +132,7 @@ class BottomNav extends StatefulWidget {
 }
 
 class _BottomNavState extends State<BottomNav> {
-  final List<String> _tabLabels = ['pockets',  "smslistener" 'profile'];
+  final List<String> _tabLabels = ['pockets', "smslistener" 'profile'];
 
   @override
   Widget build(BuildContext context) {

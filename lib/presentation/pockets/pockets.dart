@@ -305,6 +305,8 @@ class _PocketsState extends State<Pockets> {
                                 stream: incomeProvider.totalIncomeStream,
                                 builder: (context, snapshot) {
                                   double totalincome = snapshot.data ?? 0.0;
+                                  int sourceCount =
+                                      incomeProvider.incomes.length;
 
                                   if (!snapshot.hasData) {
                                     return MainCard(
@@ -321,6 +323,9 @@ class _PocketsState extends State<Pockets> {
                                       currency: 'kes',
                                       cardcolor: black,
                                       buttonText: 'home.add_income'.tr(),
+                                      sourceCount: sourceCount,
+                                      onViewPressed: () => Navigator.pushNamed(
+                                          context, AppRouter.view_income),
                                     );
                                   }
                                 },
