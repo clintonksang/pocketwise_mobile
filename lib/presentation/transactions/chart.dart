@@ -139,11 +139,10 @@ class BarChartSample2State extends State<BarChartSample2> {
                             child: BarChart(
                               BarChartData(
                                 maxY: _calculateMaxY(),
-                                backgroundColor: Colors.black87,
                                 barTouchData: BarTouchData(
                                   touchTooltipData: BarTouchTooltipData(
                                     getTooltipColor: (barGroup) =>
-                                        Colors.grey.withOpacity(0.9),
+                                        Colors.grey.withOpacity(0.8),
                                     tooltipRoundedRadius: 8,
                                     fitInsideHorizontally: true,
                                     fitInsideVertically: true,
@@ -281,7 +280,7 @@ class BarChartSample2State extends State<BarChartSample2> {
       child: Text(
         'KES ${NumberFormat.compact().format(value)}',
         style: const TextStyle(
-          color: Colors.white70,
+          color: Color(0xff7589a2),
           fontWeight: FontWeight.bold,
           fontSize: 12,
         ),
@@ -300,7 +299,7 @@ class BarChartSample2State extends State<BarChartSample2> {
       child: Text(
         monthName,
         style: const TextStyle(
-          color: Colors.white70,
+          color: Color(0xff7589a2),
           fontWeight: FontWeight.bold,
           fontSize: 14,
         ),
