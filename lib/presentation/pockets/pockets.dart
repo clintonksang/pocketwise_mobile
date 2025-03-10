@@ -92,8 +92,11 @@ class _PocketsState extends State<Pockets> {
 
   // Call this function if data needs refreshing, like after a save operation
   reload() async {
-    // await _loadPocketCategories();
-    _loadTotalIncome();
+    await expenseRepository.refreshTransactions();
+    await _loadTotalIncome();
+    setState(() {
+      _futureExpenses = expenseRepository.getTransactionsSortedByDate();
+    });
   }
 
   Future<void> _loadPocketTotals() async {
@@ -509,7 +512,6 @@ class _ExpenseListState extends State<ExpenseList> {
   }
 
   Future<void> _loadExpensesForMonth(DateTime month) async {
-
     setState(() {
       isLoading = true;
     });

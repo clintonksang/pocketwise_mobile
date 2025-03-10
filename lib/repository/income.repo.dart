@@ -8,6 +8,10 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../models/income.model.dart';
 
 class IncomeRepository {
+  static const String CACHE_KEY_INCOMES = 'cached_incomes';
+  static const String CACHE_TIMESTAMP_KEY = 'incomes_cache_timestamp';
+  static const Duration CACHE_DURATION = Duration(minutes: 30);
+
   IncomeRepository() {
     _initializeRepository();
   }
@@ -26,9 +30,43 @@ class IncomeRepository {
     await getAllTransactions();
   }
 
+  Future<void> _saveToCache(List<IncomeModel> incomes) async {
+    final prefs = await SharedPreferences.getInstance();
+    final incomesJson = json.encode(incomes.map((e) => e.toMap()).toList());
+    await prefs.setString(CACHE_KEY_INCOMES, incomesJson);
+    await prefs.setInt(
+        CACHE_TIMESTAMP_KEY, DateTime.now().millisecondsSinceEpoch);
+  }
+
+  Future<List<IncomeModel>?> _getFromCache() async {
+    final prefs = await SharedPreferences.getInstance();
+    final timestamp = prefs.getInt(CACHE_TIMESTAMP_KEY);
+    final cachedData = prefs.getString(CACHE_KEY_INCOMES);
+
+    if (timestamp != null && cachedData != null) {
+      final cacheAge = DateTime.now().millisecondsSinceEpoch - timestamp;
+      if (cacheAge < CACHE_DURATION.inMilliseconds) {
+        try {
+          final List<dynamic> decoded = json.decode(cachedData);
+          return decoded.map((e) => IncomeModel.fromMap(e)).toList();
+        } catch (e) {
+          Logger().e('Error parsing cached incomes: $e');
+          return null;
+        }
+      }
+    }
+    return null;
+  }
+
   // Save a transaction to Firebase
   Future<void> saveTransaction(IncomeModel transaction) async {
     await saveincometoFirebase(transaction);
+
+    // Update cache
+    final currentIncomes = await getAllTransactions();
+    currentIncomes.add(transaction);
+    await _saveToCache(currentIncomes);
+
     _calculateTotalIncome(); // Update stream with new total
   }
 
@@ -73,6 +111,13 @@ class IncomeRepository {
             .collection('incomes')
             .doc(id)
             .delete();
+
+        // Update cache after deletion
+        final currentIncomes = await getAllTransactions();
+        final updatedIncomes =
+            currentIncomes.where((income) => income.id != id).toList();
+        await _saveToCache(updatedIncomes);
+
         Logger().i('Income deleted successfully!');
         _calculateTotalIncome(); // Update stream with new total
       } catch (e) {
@@ -84,30 +129,45 @@ class IncomeRepository {
 
   // Get all transactions from Shared Preferences
   Future<List<IncomeModel>> getAllTransactions() async {
+    // Try to get from cache first
+    final cachedIncomes = await _getFromCache();
+    if (cachedIncomes != null) {
+      Logger().i('Returning incomes from cache');
+      return cachedIncomes;
+    }
+
+    // If cache miss or expired, fetch from Firebase
+    Logger().i('Cache miss or expired, fetching from Firebase');
     final prefs = await SharedPreferences.getInstance();
     final String? userId = prefs.getString('phone') ?? '';
-    print('userId from prefs: $userId');
-    if (userId != null && userId.isNotEmpty) {
-      final QuerySnapshot snapshot = await _firestore
-          .collection('users')
-          .doc(userId)
-          .collection('incomes')
-          .get();
 
-      final List<IncomeModel> transactions = snapshot.docs.map((doc) {
-        final data = doc.data() as Map<String, dynamic>;
-        return IncomeModel(
-          id: doc.id,
-          amount: double.parse(data['amount'].toString()),
-          date: data['date'],
-          income_from: data['sender'],
-        );
-      }).toList();
-      print('INCOME transactions: $transactions');
-      return transactions;
-    } else {
-      return [];
+    if (userId != null && userId.isNotEmpty) {
+      try {
+        final QuerySnapshot snapshot = await _firestore
+            .collection('users')
+            .doc(userId)
+            .collection('incomes')
+            .get();
+
+        final List<IncomeModel> transactions = snapshot.docs.map((doc) {
+          final data = doc.data() as Map<String, dynamic>;
+          return IncomeModel(
+            id: doc.id,
+            amount: double.parse(data['amount'].toString()),
+            date: data['date'],
+            income_from: data['sender'],
+          );
+        }).toList();
+
+        // Update cache with new data
+        await _saveToCache(transactions);
+        return transactions;
+      } catch (e) {
+        Logger().e('Error fetching incomes from Firebase: $e');
+        return [];
+      }
     }
+    return [];
   }
 
   // Clear all transactions from Firebase
@@ -129,7 +189,12 @@ class IncomeRepository {
         });
 
         await batch.commit();
-        Logger().i('All incomes cleared from Firebase');
+
+        // Clear cache
+        await prefs.remove(CACHE_KEY_INCOMES);
+        await prefs.remove(CACHE_TIMESTAMP_KEY);
+
+        Logger().i('All incomes cleared from Firebase and cache');
         _calculateTotalIncome(); // Update the stream to reflect the new state
       } catch (e) {
         Logger().e('Error clearing incomes: $e');
@@ -182,5 +247,12 @@ class IncomeRepository {
   Future<void> _calculateTotalIncome() async {
     double totalIncome = await getTotalIncome();
     _incomeStreamController.add(totalIncome);
+  }
+
+  Future<void> refreshTransactions() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(CACHE_KEY_INCOMES);
+    await prefs.remove(CACHE_TIMESTAMP_KEY);
+    await getAllTransactions(); // This will fetch fresh data and update cache
   }
 }

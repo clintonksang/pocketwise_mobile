@@ -106,6 +106,7 @@ class TransactionsState extends State {
         });
       }
     } catch (e) {
+      Logger().e('Error loading data: $e');
       if (mounted) {
         setState(() {
           isLoading = false;
@@ -215,234 +216,243 @@ class TransactionsState extends State {
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const SizedBox(height: 24),
-              Text(
-                'Transactions',
-                style: TextStyle(
-                  color: Colors.black,
-                  fontSize: 28,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const SizedBox(height: 16),
-              MonthSelector(
-                selectedMonth: selectedMonth,
-                onDateRangeSelected: _handleDateRangeSelected,
-                isCustomRangeSelected: startDate != endDate,
-              ),
-              const SizedBox(height: 16),
-              // Text(
-              //   startDate == endDate
-              //       ? 'Expenses by Category'
-              //       : 'Expenses by Category (${DateFormat('dd MMM yyyy').format(startDate!)} - ${DateFormat('dd MMM yyyy').format(endDate!)})',
-              //   style: TextStyle(
-              //     color: primaryColor,
-              //     fontSize: 24,
-              //     fontWeight: FontWeight.w500,
-              //   ),
-              // ),
-              const SizedBox(height: 8),
-              if (selectedCategory != null) ...[
+          child: RefreshIndicator(
+            onRefresh: () async {
+              await _expenseRepository.refreshTransactions();
+              await _loadData();
+            },
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const SizedBox(height: 24),
                 Text(
-                  startDate == endDate
-                      ? 'You spent ${NumberFormat.currency(symbol: 'KES ', decimalDigits: 2).format(categoryExpenses[selectedCategory] ?? 0)} in ${DateFormat('MMMM yyyy').format(startDate!)} on ${selectedCategory!.toUpperCase()}'
-                      : 'You spent ${NumberFormat.currency(symbol: 'KES ', decimalDigits: 2).format(categoryExpenses[selectedCategory] ?? 0)} between ${DateFormat('dd MMM yyyy').format(startDate!)} and ${DateFormat('dd MMM yyyy').format(endDate!)} on ${selectedCategory!.toUpperCase()}',
+                  'Transactions',
                   style: TextStyle(
-                    color: primaryColor,
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
+                    color: Colors.black,
+                    fontSize: 28,
+                    fontWeight: FontWeight.bold,
                   ),
                 ),
-                const SizedBox(height: 4),
-                Text(
-                  'Total spent: ${NumberFormat.currency(symbol: 'KES ', decimalDigits: 2).format(totalAmount)}',
-                  style: TextStyle(
-                    color: Colors.black87,
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
-                  ),
+                const SizedBox(height: 16),
+                MonthSelector(
+                  selectedMonth: selectedMonth,
+                  onDateRangeSelected: _handleDateRangeSelected,
+                  isCustomRangeSelected: startDate != endDate,
                 ),
-              ] else ...[
-                Text(
-                  startDate == endDate
-                      ? 'You spent ${NumberFormat.currency(symbol: 'KES ', decimalDigits: 2).format(totalAmount)} in ${DateFormat('MMMM yyyy').format(startDate!)}'
-                      : 'You spent ${NumberFormat.currency(symbol: 'KES ', decimalDigits: 2).format(totalAmount)} between ${DateFormat('dd MMM yyyy').format(startDate!)} and ${DateFormat('dd MMM yyyy').format(endDate!)}',
-                  style: TextStyle(
-                    color: Colors.black87,
-                    fontSize: 16,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ],
-              if (daysWithoutExpenses.isNotEmpty) ...[
+                const SizedBox(height: 16),
+                // Text(
+                //   startDate == endDate
+                //       ? 'Expenses by Category'
+                //       : 'Expenses by Category (${DateFormat('dd MMM yyyy').format(startDate!)} - ${DateFormat('dd MMM yyyy').format(endDate!)})',
+                //   style: TextStyle(
+                //     color: primaryColor,
+                //     fontSize: 24,
+                //     fontWeight: FontWeight.w500,
+                //   ),
+                // ),
                 const SizedBox(height: 8),
-                Text(
-                  'No expenses on ${daysWithoutExpenses.length} days',
-                  style: TextStyle(
-                    color: Colors.grey[600],
-                    fontSize: 14,
+                if (selectedCategory != null) ...[
+                  Text(
+                    startDate == endDate
+                        ? 'You spent ${NumberFormat.currency(symbol: 'KES ', decimalDigits: 2).format(categoryExpenses[selectedCategory] ?? 0)} in ${DateFormat('MMMM yyyy').format(startDate!)} on ${selectedCategory!.toUpperCase()}'
+                        : 'You spent ${NumberFormat.currency(symbol: 'KES ', decimalDigits: 2).format(categoryExpenses[selectedCategory] ?? 0)} between ${DateFormat('dd MMM yyyy').format(startDate!)} and ${DateFormat('dd MMM yyyy').format(endDate!)} on ${selectedCategory!.toUpperCase()}',
+                    style: TextStyle(
+                      color: primaryColor,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
-                ),
-              ],
-              Expanded(
-                child: isLoading
-                    ? const Center(child: CircularProgressIndicator())
-                    : categoryExpenses.isEmpty
-                        ? const Center(
-                            child: Text(
-                              'No expenses available',
-                              style: TextStyle(
-                                color: Colors.black87,
-                                fontSize: 16,
+                  const SizedBox(height: 4),
+                  Text(
+                    'Total spent: ${NumberFormat.currency(symbol: 'KES ', decimalDigits: 2).format(totalAmount)}',
+                    style: TextStyle(
+                      color: Colors.black87,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ] else ...[
+                  Text(
+                    startDate == endDate
+                        ? 'You spent ${NumberFormat.currency(symbol: 'KES ', decimalDigits: 2).format(totalAmount)} in ${DateFormat('MMMM yyyy').format(startDate!)}'
+                        : 'You spent ${NumberFormat.currency(symbol: 'KES ', decimalDigits: 2).format(totalAmount)} between ${DateFormat('dd MMM yyyy').format(startDate!)} and ${DateFormat('dd MMM yyyy').format(endDate!)}',
+                    style: TextStyle(
+                      color: Colors.black87,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
+                if (daysWithoutExpenses.isNotEmpty) ...[
+                  const SizedBox(height: 8),
+                  Text(
+                    'No expenses on ${daysWithoutExpenses.length} days',
+                    style: TextStyle(
+                      color: Colors.grey[600],
+                      fontSize: 14,
+                    ),
+                  ),
+                ],
+                Expanded(
+                  child: isLoading
+                      ? const Center(child: CircularProgressIndicator())
+                      : categoryExpenses.isEmpty
+                          ? const Center(
+                              child: Text(
+                                'No expenses available',
+                                style: TextStyle(
+                                  color: Colors.black87,
+                                  fontSize: 16,
+                                ),
                               ),
-                            ),
-                          )
-                        : Column(
-                            children: [
-                              const SizedBox(height: 24),
-                              Expanded(
-                                flex: 5,
-                                child: PieChart(
-                                  PieChartData(
-                                    pieTouchData: PieTouchData(
-                                      touchCallback: (FlTouchEvent event,
-                                          pieTouchResponse) {
-                                        if (!event
-                                                .isInterestedForInteractions ||
-                                            pieTouchResponse == null ||
-                                            pieTouchResponse.touchedSection ==
-                                                null) {
-                                          return;
-                                        }
-                                        final category = categoryExpenses.keys
-                                            .elementAt(pieTouchResponse
-                                                .touchedSection!
-                                                .touchedSectionIndex);
-                                        _handleCategorySelect(category);
-                                      },
+                            )
+                          : Column(
+                              children: [
+                                const SizedBox(height: 24),
+                                Expanded(
+                                  flex: 5,
+                                  child: PieChart(
+                                    PieChartData(
+                                      pieTouchData: PieTouchData(
+                                        touchCallback: (FlTouchEvent event,
+                                            pieTouchResponse) {
+                                          if (!event
+                                                  .isInterestedForInteractions ||
+                                              pieTouchResponse == null ||
+                                              pieTouchResponse.touchedSection ==
+                                                  null) {
+                                            return;
+                                          }
+                                          final category = categoryExpenses.keys
+                                              .elementAt(pieTouchResponse
+                                                  .touchedSection!
+                                                  .touchedSectionIndex);
+                                          _handleCategorySelect(category);
+                                        },
+                                      ),
+                                      borderData: FlBorderData(show: false),
+                                      sectionsSpace: 0,
+                                      centerSpaceRadius: 40,
+                                      sections: showingSections(),
                                     ),
-                                    borderData: FlBorderData(show: false),
-                                    sectionsSpace: 0,
-                                    centerSpaceRadius: 40,
-                                    sections: showingSections(),
                                   ),
                                 ),
-                              ),
-                              const SizedBox(height: 24),
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                    horizontal: 16, vertical: 8),
-                                child: Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceEvenly,
-                                  children:
-                                      categoryExpenses.entries.map((entry) {
-                                    final total = categoryExpenses.values
-                                        .fold(0.0, (sum, value) => sum + value);
-                                    final percentage =
-                                        (entry.value / total * 100)
-                                            .toStringAsFixed(1);
-                                    final amount = NumberFormat.currency(
-                                      symbol: 'KES ',
-                                      decimalDigits: 2,
-                                    ).format(entry.value);
-                                    final isSelected = selectedCategory ==
-                                        entry.key.toLowerCase();
-                                    final baseColor = categoryColors[
-                                            entry.key.toLowerCase()] ??
-                                        primaryColor;
+                                const SizedBox(height: 24),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 16, vertical: 8),
+                                  child: Row(
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceEvenly,
+                                    children:
+                                        categoryExpenses.entries.map((entry) {
+                                      final total = categoryExpenses.values
+                                          .fold(
+                                              0.0, (sum, value) => sum + value);
+                                      final percentage =
+                                          (entry.value / total * 100)
+                                              .toStringAsFixed(1);
+                                      final amount = NumberFormat.currency(
+                                        symbol: 'KES ',
+                                        decimalDigits: 2,
+                                      ).format(entry.value);
+                                      final isSelected = selectedCategory ==
+                                          entry.key.toLowerCase();
+                                      final baseColor = categoryColors[
+                                              entry.key.toLowerCase()] ??
+                                          primaryColor;
 
-                                    return Expanded(
-                                      child: GestureDetector(
-                                        onTap: () =>
-                                            _handleCategorySelect(entry.key),
-                                        child: Container(
-                                          padding: const EdgeInsets.all(8),
-                                          decoration: BoxDecoration(
-                                            color: isSelected
-                                                ? baseColor.withOpacity(0.15)
-                                                : Colors.transparent,
-                                            borderRadius:
-                                                BorderRadius.circular(12),
-                                            border: isSelected
-                                                ? Border.all(
-                                                    color: baseColor,
-                                                    width: 1.5,
-                                                  )
-                                                : null,
-                                          ),
-                                          child: Column(
-                                            mainAxisSize: MainAxisSize.min,
-                                            children: [
-                                              Row(
-                                                mainAxisSize: MainAxisSize.min,
-                                                children: [
-                                                  Container(
-                                                    width: 8,
-                                                    height: 8,
-                                                    decoration: BoxDecoration(
+                                      return Expanded(
+                                        child: GestureDetector(
+                                          onTap: () =>
+                                              _handleCategorySelect(entry.key),
+                                          child: Container(
+                                            padding: const EdgeInsets.all(8),
+                                            decoration: BoxDecoration(
+                                              color: isSelected
+                                                  ? baseColor.withOpacity(0.15)
+                                                  : Colors.transparent,
+                                              borderRadius:
+                                                  BorderRadius.circular(12),
+                                              border: isSelected
+                                                  ? Border.all(
                                                       color: baseColor,
-                                                      shape: BoxShape.circle,
-                                                    ),
-                                                  ),
-                                                  const SizedBox(width: 4),
-                                                  Flexible(
-                                                    child: Text(
-                                                      entry.key.toUpperCase(),
-                                                      style: TextStyle(
-                                                        fontSize: 10,
-                                                        fontWeight:
-                                                            FontWeight.bold,
-                                                        color: isSelected
-                                                            ? baseColor
-                                                            : Colors.black54,
+                                                      width: 1.5,
+                                                    )
+                                                  : null,
+                                            ),
+                                            child: Column(
+                                              mainAxisSize: MainAxisSize.min,
+                                              children: [
+                                                Row(
+                                                  mainAxisSize:
+                                                      MainAxisSize.min,
+                                                  children: [
+                                                    Container(
+                                                      width: 8,
+                                                      height: 8,
+                                                      decoration: BoxDecoration(
+                                                        color: baseColor,
+                                                        shape: BoxShape.circle,
                                                       ),
-                                                      overflow:
-                                                          TextOverflow.ellipsis,
                                                     ),
+                                                    const SizedBox(width: 4),
+                                                    Flexible(
+                                                      child: Text(
+                                                        entry.key.toUpperCase(),
+                                                        style: TextStyle(
+                                                          fontSize: 10,
+                                                          fontWeight:
+                                                              FontWeight.bold,
+                                                          color: isSelected
+                                                              ? baseColor
+                                                              : Colors.black54,
+                                                        ),
+                                                        overflow: TextOverflow
+                                                            .ellipsis,
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+                                                const SizedBox(height: 4),
+                                                Text(
+                                                  amount,
+                                                  style: TextStyle(
+                                                    fontSize: 10,
+                                                    color: isSelected
+                                                        ? baseColor
+                                                        : Colors.black54,
+                                                    fontWeight: isSelected
+                                                        ? FontWeight.bold
+                                                        : FontWeight.normal,
                                                   ),
-                                                ],
-                                              ),
-                                              const SizedBox(height: 4),
-                                              Text(
-                                                amount,
-                                                style: TextStyle(
-                                                  fontSize: 10,
-                                                  color: isSelected
-                                                      ? baseColor
-                                                      : Colors.black54,
-                                                  fontWeight: isSelected
-                                                      ? FontWeight.bold
-                                                      : FontWeight.normal,
+                                                  overflow:
+                                                      TextOverflow.ellipsis,
                                                 ),
-                                                overflow: TextOverflow.ellipsis,
-                                              ),
-                                              Text(
-                                                '($percentage%)',
-                                                style: TextStyle(
-                                                  fontSize: 10,
-                                                  color: isSelected
-                                                      ? baseColor
-                                                      : Colors.grey
-                                                          .withOpacity(0.6),
+                                                Text(
+                                                  '($percentage%)',
+                                                  style: TextStyle(
+                                                    fontSize: 10,
+                                                    color: isSelected
+                                                        ? baseColor
+                                                        : Colors.grey
+                                                            .withOpacity(0.6),
+                                                  ),
                                                 ),
-                                              ),
-                                            ],
+                                              ],
+                                            ),
                                           ),
                                         ),
-                                      ),
-                                    );
-                                  }).toList(),
+                                      );
+                                    }).toList(),
+                                  ),
                                 ),
-                              ),
-                              const SizedBox(height: 24),
-                            ],
-                          ),
-              ),
-            ],
+                                const SizedBox(height: 24),
+                              ],
+                            ),
+                ),
+              ],
+            ),
           ),
         ),
       ),

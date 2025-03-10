@@ -8,71 +8,57 @@ import '../models/expensecardmodel.dart';
 import 'package:intl/intl.dart';
 
 class ExpenseRepository {
+  static const String CACHE_KEY_EXPENSES = 'cached_expenses';
+  static const String CACHE_TIMESTAMP_KEY = 'expenses_cache_timestamp';
+  static const Duration CACHE_DURATION = Duration(minutes: 30);
+
   ExpenseRepository() {
     _calculateTotalExpense();
   }
-  static const String _transactionKey = 'transactions';
+
   final StreamController<double> _expenseStreamController =
       StreamController.broadcast();
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
-  // Stream for total expense
   Stream<double> get expenseStream => _expenseStreamController.stream;
 
-  // Save a transaction to the Shared Preferences list
-  Future<void> saveTransaction(ExpenseModel transaction) async {
+  Future<void> _saveToCache(List<ExpenseModel> expenses) async {
     final prefs = await SharedPreferences.getInstance();
-
-    // Get the existing transactions list (as a JSON string)
-    String? transactionsJson = prefs.getString(_transactionKey);
-    List<Map<String, dynamic>> transactionsList = [];
-
-    if (transactionsJson != null) {
-      List<dynamic> decodedList = jsonDecode(transactionsJson);
-      transactionsList = decodedList.cast<Map<String, dynamic>>();
-    }
-
-    // Add the new transaction to the list
-    transactionsList.add(transaction.toMap());
-
-    // Save the updated list back to Shared Preferences
-    String updatedJson = jsonEncode(transactionsList);
-    await prefs.setString(_transactionKey, updatedJson);
-
-    print('saved items: $transactionsList');
-    this.saveExpensestoFirebase(transaction);
-    _calculateTotalExpense();
+    final expensesJson = json.encode(expenses.map((e) => e.toMap()).toList());
+    await prefs.setString(CACHE_KEY_EXPENSES, expensesJson);
+    await prefs.setInt(
+        CACHE_TIMESTAMP_KEY, DateTime.now().millisecondsSinceEpoch);
   }
 
-  // Get all transactions from Shared Preferences
-  Future<List<ExpenseModel>> getAllTransactions() async {
+  Future<List<ExpenseModel>?> _getFromCache() async {
     final prefs = await SharedPreferences.getInstance();
-    final String? userId = prefs.getString('phone') ?? '';
+    final timestamp = prefs.getInt(CACHE_TIMESTAMP_KEY);
+    final cachedData = prefs.getString(CACHE_KEY_EXPENSES);
 
-    if (userId != null && userId.isNotEmpty) {
-      final QuerySnapshot snapshot = await _firestore
-          .collection('users')
-          .doc(userId)
-          .collection('expenses')
-          .get();
-
-      final List<ExpenseModel> transactions = snapshot.docs.map((doc) {
-        return ExpenseModel.fromMap(doc.data() as Map<String, dynamic>);
-      }).toList();
-
-      return transactions;
-    } else {
-      return [];
+    if (timestamp != null && cachedData != null) {
+      final cacheAge = DateTime.now().millisecondsSinceEpoch - timestamp;
+      if (cacheAge < CACHE_DURATION.inMilliseconds) {
+        try {
+          final List<dynamic> decoded = json.decode(cachedData);
+          return decoded.map((e) => ExpenseModel.fromMap(e)).toList();
+        } catch (e) {
+          Logger().e('Error parsing cached expenses: $e');
+          return null;
+        }
+      }
     }
-    // final prefs = await SharedPreferences.getInstance();
-    // String? transactionsJson = prefs.getString(_transactionKey);
+    return null;
+  }
 
-    // if (transactionsJson != null) {
-    //   List<dynamic> decodedList = jsonDecode(transactionsJson);
-    //   return decodedList.map((item) => ExpenseModel.fromMap(item)).toList();
-    // }
+  Future<void> saveTransaction(ExpenseModel transaction) async {
+    await saveExpensestoFirebase(transaction);
 
-    // return [];
+    // Update cache
+    final currentExpenses = await getAllTransactions();
+    currentExpenses.add(transaction);
+    await _saveToCache(currentExpenses);
+
+    _calculateTotalExpense();
   }
 
   Future<void> saveExpensestoFirebase(ExpenseModel expenseModel) async {
@@ -98,8 +84,51 @@ class ExpenseRepository {
       });
       Logger().i('Expense saved to firebase');
     } catch (e) {
-      Logger().e('Error saving income to firebase: $e');
+      Logger().e('Error saving expense to firebase: $e');
     }
+  }
+
+  Future<List<ExpenseModel>> getAllTransactions() async {
+    // Try to get from cache first
+    final cachedExpenses = await _getFromCache();
+    if (cachedExpenses != null) {
+      Logger().i('Returning expenses from cache');
+      return cachedExpenses;
+    }
+
+    // If cache miss or expired, fetch from Firebase
+    Logger().i('Cache miss or expired, fetching from Firebase');
+    final prefs = await SharedPreferences.getInstance();
+    final String? userId = prefs.getString('phone') ?? '';
+
+    if (userId != null && userId.isNotEmpty) {
+      try {
+        final QuerySnapshot snapshot = await _firestore
+            .collection('users')
+            .doc(userId)
+            .collection('expenses')
+            .get();
+
+        final List<ExpenseModel> transactions = snapshot.docs.map((doc) {
+          return ExpenseModel.fromMap(doc.data() as Map<String, dynamic>);
+        }).toList();
+
+        // Update cache with new data
+        await _saveToCache(transactions);
+        return transactions;
+      } catch (e) {
+        Logger().e('Error fetching expenses from Firebase: $e');
+        return [];
+      }
+    }
+    return [];
+  }
+
+  Future<void> refreshTransactions() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(CACHE_KEY_EXPENSES);
+    await prefs.remove(CACHE_TIMESTAMP_KEY);
+    await getAllTransactions(); // This will fetch fresh data and update cache
   }
 
   // Get transactions sorted by date
