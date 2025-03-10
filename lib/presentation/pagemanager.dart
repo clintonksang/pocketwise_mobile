@@ -51,7 +51,7 @@ class _PageManagerState extends State<PageManager> {
         onPageChanged: _onPageChanged,
         children: [
           Pockets(onScrollChange: _onScrollChange),
-          TransactionsPage(),
+          Transactions(),
           // SMSListener(),
           Profile()
         ],

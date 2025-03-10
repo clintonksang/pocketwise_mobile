@@ -6,26 +6,23 @@ import 'package:pocketwise/repository/expense.repo.dart';
 import 'package:pocketwise/repository/budget.repo.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:convert';
+import 'dart:math';
 
-class BarChartSample2 extends StatefulWidget {
-  BarChartSample2({super.key});
-  final Color incomeColor = greencolor;
-  final Color expenseColor = red;
-  final Color avgColor = Colors.orange;
+class PieChartSample2 extends StatefulWidget {
+  const PieChartSample2({super.key});
+
   @override
-  State<StatefulWidget> createState() => BarChartSample2State();
+  State<StatefulWidget> createState() => PieChart2State();
 }
 
-class BarChartSample2State extends State<BarChartSample2> {
-  final double width = 7;
+class PieChart2State extends State {
   final ExpenseRepository _expenseRepository = ExpenseRepository();
-  String selectedCategory = 'all';
-
-  List<BarChartGroupData> rawBarGroups = [];
-  List<BarChartGroupData> showingBarGroups = [];
+  int touchedIndex = -1;
   bool isLoading = true;
-
-  int touchedGroupIndex = -1;
+  Map<String, double> categoryExpenses = {};
+  Map<String, Color> categoryColors = {};
 
   @override
   void initState() {
@@ -41,57 +38,22 @@ class BarChartSample2State extends State<BarChartSample2> {
     });
 
     try {
-      final now = DateTime.now();
-      List<BarChartGroupData> items = [];
+      final expenses = await _expenseRepository.getAllTransactions();
+      Map<String, double> expensesByCategory = {};
 
-      // Get all incomes first (these will be constant)
-      final incomes =
-          await Provider.of<IncomeProvider>(context, listen: false).incomes;
-      Map<int, double> monthlyIncomes = {};
-
-      // Calculate income for each month
-      for (var income in incomes) {
-        try {
-          final incomeDate = DateTime.parse(income.date);
-          final monthKey = (incomeDate.year - now.year) * 12 +
-              (incomeDate.month - now.month);
-          monthlyIncomes[monthKey] =
-              (monthlyIncomes[monthKey] ?? 0) + income.amount;
-        } catch (e) {
-          continue;
-        }
+      for (var expense in expenses) {
+        final category = expense.category.toLowerCase();
+        final amount = double.parse(expense.amount);
+        expensesByCategory[category] =
+            (expensesByCategory[category] ?? 0) + amount;
       }
 
-      // Get last 6 months of data
-      for (int i = 5; i >= 0; i--) {
-        final month = DateTime(now.year, now.month - i, 1);
-        double monthExpense = 0;
-
-        if (selectedCategory == 'all') {
-          monthExpense = await _expenseRepository.getTotalExpenseByMonth(month);
-        } else {
-          // Get expenses for specific category
-          final expenses = await _expenseRepository.getAllTransactions();
-          monthExpense = expenses.where((expense) {
-            final expenseDate = DateTime.parse(expense.dateCreated);
-            return expenseDate.year == month.year &&
-                expenseDate.month == month.month &&
-                expense.category.toLowerCase() ==
-                    selectedCategory.toLowerCase();
-          }).fold(0, (sum, expense) => sum + double.parse(expense.amount));
-        }
-
-        // Get income for this month (or 0 if no income)
-        final monthKey = -i; // Negative because we're counting backwards
-        final monthIncome = monthlyIncomes[monthKey] ?? 0;
-
-        items.add(makeGroupData(5 - i, monthIncome, monthExpense));
-      }
+      // Load or generate colors for categories
+      await _loadOrGenerateColors(expensesByCategory.keys.toList());
 
       if (mounted) {
         setState(() {
-          rawBarGroups = items;
-          showingBarGroups = items;
+          categoryExpenses = expensesByCategory;
           isLoading = false;
         });
       }
@@ -104,299 +66,231 @@ class BarChartSample2State extends State<BarChartSample2> {
     }
   }
 
-  Widget _buildCategoryFilter() {
-    return Consumer<BudgetRepository>(
-      builder: (context, budgetRepository, child) {
-        return SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          child: Row(
-            children: [
-              _buildCategoryChip('All', 'all'),
-              ...budgetRepository.categories.map((category) =>
-                  _buildCategoryChip(category.title, category.type)),
-            ],
-          ),
-        );
-      },
+  Future<void> _loadOrGenerateColors(List<String> categories) async {
+    final prefs = await SharedPreferences.getInstance();
+    final colorsJson = prefs.getString('category_colors');
+    Map<String, Color> loadedColors = {};
+
+    if (colorsJson != null) {
+      final Map<String, dynamic> colorsMap = json.decode(colorsJson);
+      colorsMap.forEach((key, value) {
+        loadedColors[key] = Color(value);
+      });
+    }
+
+    // Generate new colors for categories that don't have one
+    for (var category in categories) {
+      if (!loadedColors.containsKey(category)) {
+        loadedColors[category] = _generateRandomColor();
+      }
+    }
+
+    // Save updated colors
+    final Map<String, dynamic> colorsToSave = {};
+    loadedColors.forEach((key, value) {
+      colorsToSave[key] = value.value;
+    });
+    await prefs.setString('category_colors', json.encode(colorsToSave));
+
+    if (mounted) {
+      setState(() {
+        categoryColors = loadedColors;
+      });
+    }
+  }
+
+  Color _generateRandomColor() {
+    final random = Random();
+    return Color.fromRGBO(
+      random.nextInt(256),
+      random.nextInt(256),
+      random.nextInt(256),
+      1,
     );
   }
 
-  Widget _buildCategoryChip(String label, String value) {
-    final isSelected = selectedCategory == value;
-    final color = value == 'all'
-        ? primaryColor
-        : value == 'needs'
-            ? needsColor
-            : value == 'wants'
-                ? wantsColor
-                : value == 'savings'
-                    ? sandicolor
-                    : debtColor;
+  List<PieChartSectionData> showingSections() {
+    final total =
+        categoryExpenses.values.fold(0.0, (sum, value) => sum + value);
+    if (total == 0) return [];
 
-    return Padding(
-      padding: const EdgeInsets.only(right: 8.0),
-      child: FilterChip(
-        label: Text(
-          label,
-          style: TextStyle(
-            color: isSelected ? Colors.white : Colors.black87,
-            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-          ),
+    return categoryExpenses.entries.map((entry) {
+      final index = categoryExpenses.keys.toList().indexOf(entry.key);
+      final isTouched = index == touchedIndex;
+      final fontSize = isTouched ? 25.0 : 16.0;
+      final radius = isTouched ? 110.0 : 100.0;
+      final percentage = (entry.value / total * 100).toStringAsFixed(1);
+      const shadows = [Shadow(color: Colors.black, blurRadius: 2)];
+
+      return PieChartSectionData(
+        color: categoryColors[entry.key.toLowerCase()] ?? primaryColor,
+        value: entry.value,
+        title: '$percentage%',
+        radius: radius,
+        titleStyle: TextStyle(
+          fontSize: fontSize,
+          fontWeight: FontWeight.bold,
+          color: Colors.white,
+          shadows: shadows,
         ),
-        selected: isSelected,
-        backgroundColor: Colors.white,
-        selectedColor: color,
-        onSelected: (bool selected) {
-          if (selected) {
-            setState(() {
-              selectedCategory = value;
-            });
-            _loadData();
-          }
-        },
-        showCheckmark: false,
-      ),
-    );
+      );
+    }).toList();
   }
 
   @override
   Widget build(BuildContext context) {
-    return AspectRatio(
-      aspectRatio: 1,
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: <Widget>[
-            Row(
-              mainAxisSize: MainAxisSize.min,
-              children: <Widget>[
-                const SizedBox(width: 38),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Monthly Overview',
-                        style: TextStyle(color: primaryColor, fontSize: 22),
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      Text(
-                        'Income vs Expenses',
-                        style:
-                            TextStyle(color: Color(0xff77839a), fontSize: 16),
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ],
-                  ),
+    return Scaffold(
+      backgroundColor: Colors.white,
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const SizedBox(height: 24),
+              Text(
+                'Transactions',
+                style: TextStyle(
+                  color: Colors.black,
+                  fontSize: 28,
+                  fontWeight: FontWeight.bold,
                 ),
-              ],
-            ),
-            const SizedBox(height: 16),
-            _buildCategoryFilter(),
-            const SizedBox(height: 22),
-            Expanded(
-              child: isLoading
-                  ? const Center(child: CircularProgressIndicator())
-                  : showingBarGroups.isEmpty
-                      ? const Center(
-                          child: Text(
-                            'No data available',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 16,
-                            ),
-                          ),
-                        )
-                      : SingleChildScrollView(
-                          scrollDirection: Axis.horizontal,
-                          child: SizedBox(
-                            width: MediaQuery.of(context).size.width * 0.8,
-                            child: BarChart(
-                              BarChartData(
-                                maxY: _calculateMaxY(),
-                                barTouchData: BarTouchData(
-                                  touchTooltipData: BarTouchTooltipData(
-                                    getTooltipColor: (barGroup) =>
-                                        Colors.grey.withOpacity(0.8),
-                                    tooltipRoundedRadius: 8,
-                                    fitInsideHorizontally: true,
-                                    fitInsideVertically: true,
-                                    getTooltipItem:
-                                        (group, groupIndex, rod, rodIndex) {
-                                      final now = DateTime.now();
-                                      final month = DateTime(now.year,
-                                          now.month - (5 - groupIndex), 1);
-                                      final monthName =
-                                          DateFormat('MMM yyyy').format(month);
-                                      final amount = NumberFormat.currency(
-                                        symbol: 'KES ',
-                                        decimalDigits: 2,
-                                      ).format(rod.toY);
-
-                                      return BarTooltipItem(
-                                        '${rodIndex == 0 ? 'Income' : 'Expense'}\n$monthName\n$amount',
-                                        const TextStyle(
-                                          color: Colors.white,
-                                          fontWeight: FontWeight.bold,
-                                          fontSize: 14,
-                                        ),
-                                      );
-                                    },
-                                  ),
-                                  touchCallback:
-                                      (FlTouchEvent event, response) {
-                                    if (response == null ||
-                                        response.spot == null) {
-                                      setState(() {
-                                        touchedGroupIndex = -1;
-                                        showingBarGroups =
-                                            List.of(rawBarGroups);
-                                      });
-                                      return;
-                                    }
-
-                                    touchedGroupIndex =
-                                        response.spot!.touchedBarGroupIndex;
-
-                                    setState(() {
-                                      if (!event.isInterestedForInteractions) {
-                                        touchedGroupIndex = -1;
-                                        showingBarGroups =
-                                            List.of(rawBarGroups);
-                                        return;
-                                      }
-
-                                      showingBarGroups = List.of(rawBarGroups);
-                                      if (touchedGroupIndex != -1) {
-                                        showingBarGroups[touchedGroupIndex] =
-                                            showingBarGroups[touchedGroupIndex]
-                                                .copyWith(
-                                          barRods: showingBarGroups[
-                                                  touchedGroupIndex]
-                                              .barRods
-                                              .map((rod) {
-                                            return rod.copyWith(
-                                              width: width * 1.5,
-                                              borderRadius:
-                                                  const BorderRadius.all(
-                                                      Radius.circular(2)),
-                                            );
-                                          }).toList(),
-                                        );
-                                      }
-                                    });
-                                  },
-                                ),
-                                titlesData: FlTitlesData(
-                                  show: true,
-                                  rightTitles: const AxisTitles(
-                                    sideTitles: SideTitles(showTitles: false),
-                                  ),
-                                  topTitles: const AxisTitles(
-                                    sideTitles: SideTitles(showTitles: false),
-                                  ),
-                                  bottomTitles: AxisTitles(
-                                    sideTitles: SideTitles(
-                                      showTitles: true,
-                                      getTitlesWidget: bottomTitles,
-                                      reservedSize: 42,
-                                    ),
-                                  ),
-                                  leftTitles: AxisTitles(
-                                    sideTitles: SideTitles(
-                                      showTitles: true,
-                                      reservedSize: 50,
-                                      interval: _calculateInterval(),
-                                      getTitlesWidget: leftTitles,
-                                    ),
-                                  ),
-                                ),
-                                borderData: FlBorderData(
-                                  show: false,
-                                ),
-                                barGroups: showingBarGroups,
-                                gridData: const FlGridData(show: false),
+              ),
+              const SizedBox(height: 32),
+              Text(
+                'Expenses by Category',
+                style: TextStyle(
+                  color: primaryColor,
+                  fontSize: 24,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              Expanded(
+                child: isLoading
+                    ? const Center(child: CircularProgressIndicator())
+                    : categoryExpenses.isEmpty
+                        ? const Center(
+                            child: Text(
+                              'No expenses available',
+                              style: TextStyle(
+                                color: Colors.black87,
+                                fontSize: 16,
                               ),
                             ),
+                          )
+                        : Column(
+                            children: [
+                              const SizedBox(height: 24),
+                              Expanded(
+                                flex: 5,
+                                child: PieChart(
+                                  PieChartData(
+                                    pieTouchData: PieTouchData(
+                                      touchCallback: (FlTouchEvent event,
+                                          pieTouchResponse) {
+                                        setState(() {
+                                          if (!event
+                                                  .isInterestedForInteractions ||
+                                              pieTouchResponse == null ||
+                                              pieTouchResponse.touchedSection ==
+                                                  null) {
+                                            touchedIndex = -1;
+                                            return;
+                                          }
+                                          touchedIndex = pieTouchResponse
+                                              .touchedSection!
+                                              .touchedSectionIndex;
+                                        });
+                                      },
+                                    ),
+                                    borderData: FlBorderData(show: false),
+                                    sectionsSpace: 0,
+                                    centerSpaceRadius: 40,
+                                    sections: showingSections(),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(height: 24),
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 16, vertical: 8),
+                                child: Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceEvenly,
+                                  children:
+                                      categoryExpenses.entries.map((entry) {
+                                    final total = categoryExpenses.values
+                                        .fold(0.0, (sum, value) => sum + value);
+                                    final percentage =
+                                        (entry.value / total * 100)
+                                            .toStringAsFixed(1);
+                                    final amount = NumberFormat.currency(
+                                      symbol: 'KES ',
+                                      decimalDigits: 2,
+                                    ).format(entry.value);
+
+                                    return Expanded(
+                                      child: Column(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Row(
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              Container(
+                                                width: 8,
+                                                height: 8,
+                                                decoration: BoxDecoration(
+                                                  color: categoryColors[entry
+                                                          .key
+                                                          .toLowerCase()] ??
+                                                      primaryColor,
+                                                  shape: BoxShape.circle,
+                                                ),
+                                              ),
+                                              const SizedBox(width: 4),
+                                              Flexible(
+                                                child: Text(
+                                                  entry.key.toUpperCase(),
+                                                  style: const TextStyle(
+                                                    fontSize: 10,
+                                                    fontWeight: FontWeight.bold,
+                                                  ),
+                                                  overflow:
+                                                      TextOverflow.ellipsis,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                          const SizedBox(height: 4),
+                                          Text(
+                                            amount,
+                                            style: const TextStyle(
+                                              fontSize: 10,
+                                              color: Colors.black87,
+                                            ),
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                          Text(
+                                            '($percentage%)',
+                                            style: const TextStyle(
+                                              fontSize: 10,
+                                              color: Colors.grey,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    );
+                                  }).toList(),
+                                ),
+                              ),
+                              const SizedBox(height: 24),
+                            ],
                           ),
-                        ),
-            ),
-            const SizedBox(height: 12),
-          ],
+              ),
+            ],
+          ),
         ),
       ),
-    );
-  }
-
-  double _calculateMaxY() {
-    if (showingBarGroups.isEmpty) return 20;
-    double maxY = 0;
-    for (var group in showingBarGroups) {
-      for (var rod in group.barRods) {
-        if (rod.toY > maxY) maxY = rod.toY;
-      }
-    }
-    return maxY * 1.2;
-  }
-
-  double _calculateInterval() {
-    final maxY = _calculateMaxY();
-    return maxY / 5;
-  }
-
-  Widget leftTitles(double value, TitleMeta meta) {
-    if (value == meta.max || value == meta.min) return Container();
-
-    return SideTitleWidget(
-      axisSide: meta.axisSide,
-      space: 0,
-      child: Text(
-        'KES ${NumberFormat.compact().format(value)}',
-        style: const TextStyle(
-          color: Color(0xff7589a2),
-          fontWeight: FontWeight.bold,
-          fontSize: 12,
-        ),
-      ),
-    );
-  }
-
-  Widget bottomTitles(double value, TitleMeta meta) {
-    final now = DateTime.now();
-    final month = DateTime(now.year, now.month - (5 - value.toInt()), 1);
-    final monthName = DateFormat('MMM').format(month);
-
-    return SideTitleWidget(
-      axisSide: meta.axisSide,
-      space: 16,
-      child: Text(
-        monthName,
-        style: const TextStyle(
-          color: Color(0xff7589a2),
-          fontWeight: FontWeight.bold,
-          fontSize: 14,
-        ),
-      ),
-    );
-  }
-
-  BarChartGroupData makeGroupData(int x, double y1, double y2) {
-    return BarChartGroupData(
-      barsSpace: 4,
-      x: x,
-      barRods: [
-        BarChartRodData(
-          toY: y1,
-          color: widget.incomeColor,
-          width: width,
-        ),
-        BarChartRodData(
-          toY: y2,
-          color: widget.expenseColor,
-          width: width,
-        ),
-      ],
     );
   }
 }

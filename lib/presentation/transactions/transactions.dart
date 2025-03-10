@@ -1,48 +1,295 @@
-import 'package:flutter/material.dart';
-import 'package:pocketwise/presentation/transactions/chart.dart';
-
-import '../../utils/constants/textutil.dart';
-import '../../utils/constants/colors.dart';
-
-import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
+import 'package:flutter/material.dart';
+import 'package:pocketwise/utils/constants/colors.dart';
+import 'package:pocketwise/provider/income_provider.dart';
+import 'package:pocketwise/repository/expense.repo.dart';
+import 'package:pocketwise/repository/budget.repo.dart';
+import 'package:provider/provider.dart';
+import 'package:intl/intl.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:convert';
+import 'dart:math';
 
-class TransactionsPage extends StatelessWidget {
+class Transactions extends StatefulWidget {
+  const Transactions({super.key});
+
+  @override
+  State<StatefulWidget> createState() => TransactionsState();
+}
+
+class TransactionsState extends State {
+  final ExpenseRepository _expenseRepository = ExpenseRepository();
+  int touchedIndex = -1;
+  bool isLoading = true;
+  Map<String, double> categoryExpenses = {};
+  Map<String, Color> categoryColors = {};
+
+  @override
+  void initState() {
+    super.initState();
+    _loadData();
+  }
+
+  Future<void> _loadData() async {
+    if (!mounted) return;
+
+    setState(() {
+      isLoading = true;
+    });
+
+    try {
+      final expenses = await _expenseRepository.getAllTransactions();
+      Map<String, double> expensesByCategory = {};
+
+      for (var expense in expenses) {
+        final category = expense.category.toLowerCase();
+        final amount = double.parse(expense.amount);
+        expensesByCategory[category] =
+            (expensesByCategory[category] ?? 0) + amount;
+      }
+
+      // Load or generate colors for categories
+      await _loadOrGenerateColors(expensesByCategory.keys.toList());
+
+      if (mounted) {
+        setState(() {
+          categoryExpenses = expensesByCategory;
+          isLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          isLoading = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _loadOrGenerateColors(List<String> categories) async {
+    final prefs = await SharedPreferences.getInstance();
+    final colorsJson = prefs.getString('category_colors');
+    Map<String, Color> loadedColors = {};
+
+    if (colorsJson != null) {
+      final Map<String, dynamic> colorsMap = json.decode(colorsJson);
+      colorsMap.forEach((key, value) {
+        loadedColors[key] = Color(value);
+      });
+    }
+
+    // Generate new colors for categories that don't have one
+    for (var category in categories) {
+      if (!loadedColors.containsKey(category)) {
+        loadedColors[category] = _generateRandomColor();
+      }
+    }
+
+    // Save updated colors
+    final Map<String, dynamic> colorsToSave = {};
+    loadedColors.forEach((key, value) {
+      colorsToSave[key] = value.value;
+    });
+    await prefs.setString('category_colors', json.encode(colorsToSave));
+
+    if (mounted) {
+      setState(() {
+        categoryColors = loadedColors;
+      });
+    }
+  }
+
+  Color _generateRandomColor() {
+    final random = Random();
+    return Color.fromRGBO(
+      random.nextInt(256),
+      random.nextInt(256),
+      random.nextInt(256),
+      1,
+    );
+  }
+
+  List<PieChartSectionData> showingSections() {
+    final total =
+        categoryExpenses.values.fold(0.0, (sum, value) => sum + value);
+    if (total == 0) return [];
+
+    return categoryExpenses.entries.map((entry) {
+      final index = categoryExpenses.keys.toList().indexOf(entry.key);
+      final isTouched = index == touchedIndex;
+      final fontSize = isTouched ? 25.0 : 16.0;
+      final radius = isTouched ? 110.0 : 100.0;
+      final percentage = (entry.value / total * 100).toStringAsFixed(1);
+      const shadows = [Shadow(color: Colors.black, blurRadius: 2)];
+
+      return PieChartSectionData(
+        color: categoryColors[entry.key.toLowerCase()] ?? primaryColor,
+        value: entry.value,
+        title: '$percentage%',
+        radius: radius,
+        titleStyle: TextStyle(
+          fontSize: fontSize,
+          fontWeight: FontWeight.bold,
+          color: Colors.white,
+          shadows: shadows,
+        ),
+      );
+    }).toList();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-        backgroundColor: backgroundColor,
-        appBar: AppBar(
-          // backgroundColor: primaryColor,
-          title: Text('Transactions',
-              style: AppTextStyles.normal.copyWith(color: black)),
-          automaticallyImplyLeading: false,
+      backgroundColor: Colors.white,
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const SizedBox(height: 24),
+              Text(
+                'Transactions',
+                style: TextStyle(
+                  color: Colors.black,
+                  fontSize: 28,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 32),
+              Text(
+                'Expenses by Category',
+                style: TextStyle(
+                  color: primaryColor,
+                  fontSize: 24,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              Expanded(
+                child: isLoading
+                    ? const Center(child: CircularProgressIndicator())
+                    : categoryExpenses.isEmpty
+                        ? const Center(
+                            child: Text(
+                              'No expenses available',
+                              style: TextStyle(
+                                color: Colors.black87,
+                                fontSize: 16,
+                              ),
+                            ),
+                          )
+                        : Column(
+                            children: [
+                              const SizedBox(height: 24),
+                              Expanded(
+                                flex: 5,
+                                child: PieChart(
+                                  PieChartData(
+                                    pieTouchData: PieTouchData(
+                                      touchCallback: (FlTouchEvent event,
+                                          pieTouchResponse) {
+                                        setState(() {
+                                          if (!event
+                                                  .isInterestedForInteractions ||
+                                              pieTouchResponse == null ||
+                                              pieTouchResponse.touchedSection ==
+                                                  null) {
+                                            touchedIndex = -1;
+                                            return;
+                                          }
+                                          touchedIndex = pieTouchResponse
+                                              .touchedSection!
+                                              .touchedSectionIndex;
+                                        });
+                                      },
+                                    ),
+                                    borderData: FlBorderData(show: false),
+                                    sectionsSpace: 0,
+                                    centerSpaceRadius: 40,
+                                    sections: showingSections(),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(height: 24),
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 16, vertical: 8),
+                                child: Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceEvenly,
+                                  children:
+                                      categoryExpenses.entries.map((entry) {
+                                    final total = categoryExpenses.values
+                                        .fold(0.0, (sum, value) => sum + value);
+                                    final percentage =
+                                        (entry.value / total * 100)
+                                            .toStringAsFixed(1);
+                                    final amount = NumberFormat.currency(
+                                      symbol: 'KES ',
+                                      decimalDigits: 2,
+                                    ).format(entry.value);
+
+                                    return Expanded(
+                                      child: Column(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Row(
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              Container(
+                                                width: 8,
+                                                height: 8,
+                                                decoration: BoxDecoration(
+                                                  color: categoryColors[entry
+                                                          .key
+                                                          .toLowerCase()] ??
+                                                      primaryColor,
+                                                  shape: BoxShape.circle,
+                                                ),
+                                              ),
+                                              const SizedBox(width: 4),
+                                              Flexible(
+                                                child: Text(
+                                                  entry.key.toUpperCase(),
+                                                  style: const TextStyle(
+                                                    fontSize: 10,
+                                                    fontWeight: FontWeight.bold,
+                                                  ),
+                                                  overflow:
+                                                      TextOverflow.ellipsis,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                          const SizedBox(height: 4),
+                                          Text(
+                                            amount,
+                                            style: const TextStyle(
+                                              fontSize: 10,
+                                              color: Colors.black87,
+                                            ),
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                          Text(
+                                            '($percentage%)',
+                                            style: const TextStyle(
+                                              fontSize: 10,
+                                              color: Colors.grey,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    );
+                                  }).toList(),
+                                ),
+                              ),
+                              const SizedBox(height: 24),
+                            ],
+                          ),
+              ),
+            ],
+          ),
         ),
-        body: BarChartSample2());
-  }
-}
-
-class TransactionItem extends StatelessWidget {
-  final String title;
-  final String amount;
-  final String date;
-
-  const TransactionItem({
-    required this.title,
-    required this.amount,
-    required this.date,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8.0),
-      child: ListTile(
-        title: Text(title, style: TextStyle(fontSize: 18)),
-        subtitle:
-            Text(date, style: TextStyle(fontSize: 14, color: Colors.grey)),
-        trailing: Text(amount,
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
       ),
     );
   }
