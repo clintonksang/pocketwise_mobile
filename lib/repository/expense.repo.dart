@@ -181,6 +181,46 @@ class ExpenseRepository {
     }).toList();
   }
 
+  // Get transactions by date range
+  Future<List<ExpenseModel>> getTransactionsByDateRange(
+      DateTime startDate, DateTime endDate) async {
+    final List<ExpenseModel> transactions = await getAllTransactions();
+    final now = DateTime.now();
+
+    return transactions.where((transaction) {
+      DateTime? transactionDate;
+
+      // Handle relative dates
+      if (transaction.dateCreated.toLowerCase() == 'today') {
+        transactionDate = DateTime(now.year, now.month, now.day);
+      } else {
+        try {
+          transactionDate = DateTime.parse(transaction.dateCreated);
+        } catch (e) {
+          // If direct parse fails, try specific format
+          try {
+            final DateFormat format = DateFormat("yyyy-MM-dd HH:mm:ss");
+            transactionDate = format.parse(transaction.dateCreated);
+          } catch (e) {
+            Logger().e('Error parsing date: ${transaction.dateCreated}');
+            return false;
+          }
+        }
+      }
+
+      // Normalize dates to start of month for comparison
+      final normalizedTransactionDate =
+          DateTime(transactionDate.year, transactionDate.month, 1);
+      final normalizedStartDate = DateTime(startDate.year, startDate.month, 1);
+      final normalizedEndDate = DateTime(endDate.year, endDate.month, 1);
+
+      return normalizedTransactionDate.isAtSameMomentAs(normalizedStartDate) ||
+          normalizedTransactionDate.isAtSameMomentAs(normalizedEndDate) ||
+          (normalizedTransactionDate.isAfter(normalizedStartDate) &&
+              normalizedTransactionDate.isBefore(normalizedEndDate));
+    }).toList();
+  }
+
   // Get total expense by month
   Future<double> getTotalExpenseByMonth(DateTime month) async {
     final List<ExpenseModel> transactions = await getTransactionsByMonth(month);

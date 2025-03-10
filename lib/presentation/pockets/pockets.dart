@@ -541,7 +541,7 @@ class _ExpenseListState extends State<ExpenseList> {
         // Month selector
         MonthSelector(
           selectedMonth: selectedMonth,
-          onMonthSelected: _loadExpensesForMonth,
+          onDateRangeSelected: (start, end) => _loadExpensesForMonth(start),
         ),
         SizedBox(height: heightPadding),
 

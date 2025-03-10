@@ -25,10 +25,14 @@ class TransactionsState extends State {
   Map<String, double> categoryExpenses = {};
   Map<String, Color> categoryColors = {};
   DateTime selectedMonth = DateTime.now();
+  DateTime? startDate;
+  DateTime? endDate;
 
   @override
   void initState() {
     super.initState();
+    startDate = DateTime(selectedMonth.year, selectedMonth.month, 1);
+    endDate = startDate;
     _loadData();
   }
 
@@ -40,8 +44,11 @@ class TransactionsState extends State {
     });
 
     try {
-      final expenses =
-          await _expenseRepository.getTransactionsByMonth(selectedMonth);
+      final expenses = startDate == endDate
+          ? await _expenseRepository.getTransactionsByMonth(startDate!)
+          : await _expenseRepository.getTransactionsByDateRange(
+              startDate!, endDate!);
+
       Map<String, double> expensesByCategory = {};
 
       for (var expense in expenses) {
@@ -51,7 +58,6 @@ class TransactionsState extends State {
             (expensesByCategory[category] ?? 0) + amount;
       }
 
-      // Load or generate colors for categories
       await _loadOrGenerateColors(expensesByCategory.keys.toList());
 
       if (mounted) {
@@ -154,9 +160,11 @@ class TransactionsState extends State {
     }).toList();
   }
 
-  Future<void> _loadExpensesForMonth(DateTime month) async {
+  Future<void> _handleDateRangeSelected(DateTime start, DateTime end) async {
     setState(() {
-      selectedMonth = month;
+      startDate = start;
+      endDate = end;
+      selectedMonth = start; // Keep for compatibility
     });
     await _loadData();
   }
@@ -183,11 +191,13 @@ class TransactionsState extends State {
               const SizedBox(height: 16),
               MonthSelector(
                 selectedMonth: selectedMonth,
-                onMonthSelected: _loadExpensesForMonth,
+                onDateRangeSelected: _handleDateRangeSelected,
               ),
               const SizedBox(height: 16),
               Text(
-                'Expenses by Category',
+                startDate == endDate
+                    ? 'Expenses by Category'
+                    : 'Expenses by Category (${DateFormat('MMM yyyy').format(startDate!)} - ${DateFormat('MMM yyyy').format(endDate!)})',
                 style: TextStyle(
                   color: primaryColor,
                   fontSize: 24,
