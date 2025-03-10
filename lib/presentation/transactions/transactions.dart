@@ -4,6 +4,7 @@ import 'package:pocketwise/utils/constants/colors.dart';
 import 'package:pocketwise/provider/income_provider.dart';
 import 'package:pocketwise/repository/expense.repo.dart';
 import 'package:pocketwise/repository/budget.repo.dart';
+import 'package:pocketwise/utils/widgets/pockets/month_selector.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -153,68 +154,11 @@ class TransactionsState extends State {
     }).toList();
   }
 
-  Widget _buildMonthSelector() {
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          IconButton(
-            icon: const Icon(Icons.chevron_left),
-            onPressed: () {
-              setState(() {
-                selectedMonth = DateTime(
-                  selectedMonth.year,
-                  selectedMonth.month - 1,
-                  1,
-                );
-                _loadData();
-              });
-            },
-          ),
-          GestureDetector(
-            onTap: () async {
-              final DateTime? picked = await showDatePicker(
-                context: context,
-                initialDate: selectedMonth,
-                firstDate: DateTime(2020),
-                lastDate: DateTime.now(),
-                initialDatePickerMode: DatePickerMode.year,
-              );
-              if (picked != null) {
-                setState(() {
-                  selectedMonth = DateTime(picked.year, picked.month, 1);
-                  _loadData();
-                });
-              }
-            },
-            child: Text(
-              DateFormat('MMMM yyyy').format(selectedMonth),
-              style: const TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ),
-          IconButton(
-            icon: const Icon(Icons.chevron_right),
-            onPressed: selectedMonth.year == DateTime.now().year &&
-                    selectedMonth.month == DateTime.now().month
-                ? null
-                : () {
-                    setState(() {
-                      selectedMonth = DateTime(
-                        selectedMonth.year,
-                        selectedMonth.month + 1,
-                        1,
-                      );
-                      _loadData();
-                    });
-                  },
-          ),
-        ],
-      ),
-    );
+  Future<void> _loadExpensesForMonth(DateTime month) async {
+    setState(() {
+      selectedMonth = month;
+    });
+    await _loadData();
   }
 
   @override
@@ -237,7 +181,10 @@ class TransactionsState extends State {
                 ),
               ),
               const SizedBox(height: 16),
-              _buildMonthSelector(),
+              MonthSelector(
+                selectedMonth: selectedMonth,
+                onMonthSelected: _loadExpensesForMonth,
+              ),
               const SizedBox(height: 16),
               Text(
                 'Expenses by Category',
