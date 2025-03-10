@@ -23,6 +23,7 @@ class TransactionsState extends State {
   bool isLoading = true;
   Map<String, double> categoryExpenses = {};
   Map<String, Color> categoryColors = {};
+  DateTime selectedMonth = DateTime.now();
 
   @override
   void initState() {
@@ -38,7 +39,8 @@ class TransactionsState extends State {
     });
 
     try {
-      final expenses = await _expenseRepository.getAllTransactions();
+      final expenses =
+          await _expenseRepository.getTransactionsByMonth(selectedMonth);
       Map<String, double> expensesByCategory = {};
 
       for (var expense in expenses) {
@@ -151,7 +153,69 @@ class TransactionsState extends State {
     }).toList();
   }
 
-  //
+  Widget _buildMonthSelector() {
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          IconButton(
+            icon: const Icon(Icons.chevron_left),
+            onPressed: () {
+              setState(() {
+                selectedMonth = DateTime(
+                  selectedMonth.year,
+                  selectedMonth.month - 1,
+                  1,
+                );
+                _loadData();
+              });
+            },
+          ),
+          GestureDetector(
+            onTap: () async {
+              final DateTime? picked = await showDatePicker(
+                context: context,
+                initialDate: selectedMonth,
+                firstDate: DateTime(2020),
+                lastDate: DateTime.now(),
+                initialDatePickerMode: DatePickerMode.year,
+              );
+              if (picked != null) {
+                setState(() {
+                  selectedMonth = DateTime(picked.year, picked.month, 1);
+                  _loadData();
+                });
+              }
+            },
+            child: Text(
+              DateFormat('MMMM yyyy').format(selectedMonth),
+              style: const TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+          IconButton(
+            icon: const Icon(Icons.chevron_right),
+            onPressed: selectedMonth.year == DateTime.now().year &&
+                    selectedMonth.month == DateTime.now().month
+                ? null
+                : () {
+                    setState(() {
+                      selectedMonth = DateTime(
+                        selectedMonth.year,
+                        selectedMonth.month + 1,
+                        1,
+                      );
+                      _loadData();
+                    });
+                  },
+          ),
+        ],
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -172,7 +236,9 @@ class TransactionsState extends State {
                   fontWeight: FontWeight.bold,
                 ),
               ),
-              const SizedBox(height: 32),
+              const SizedBox(height: 16),
+              _buildMonthSelector(),
+              const SizedBox(height: 16),
               Text(
                 'Expenses by Category',
                 style: TextStyle(
