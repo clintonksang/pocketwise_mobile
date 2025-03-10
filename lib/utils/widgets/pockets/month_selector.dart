@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:pocketwise/utils/constants/colors.dart';
+import 'package:pocketwise/utils/constants/customsnackbar.dart';
 import 'package:pocketwise/utils/constants/textutil.dart';
 
 class MonthSelector extends StatefulWidget {
@@ -19,7 +20,7 @@ class MonthSelector extends StatefulWidget {
 
 class _MonthSelectorState extends State<MonthSelector> {
   late ScrollController _scrollController;
-  final int monthsToShow = 3;
+  final int monthsToShow = 12;
   late DateTime currentMonth;
   DateTime? startDate;
   DateTime? endDate;
@@ -27,6 +28,7 @@ class _MonthSelectorState extends State<MonthSelector> {
   @override
   void initState() {
     super.initState();
+ 
     currentMonth = DateTime.now();
     _scrollController = ScrollController();
     // Initialize with current month as both start and end date
@@ -43,6 +45,19 @@ class _MonthSelectorState extends State<MonthSelector> {
   }
 
   Future<void> _showDateRangePicker() async {
+    // Show snackbar to inform about scrolling
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          'Scroll up to see earlier dates, then select from and to  date range',
+          style: TextStyle(color: Colors.white),
+        ),
+        backgroundColor: primaryColor,
+        duration: Duration(seconds: 10),
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+
     final DateTimeRange? picked = await showDateRangePicker(
       context: context,
       firstDate: DateTime(2024),
@@ -51,6 +66,7 @@ class _MonthSelectorState extends State<MonthSelector> {
         start: startDate ?? DateTime.now(),
         end: endDate ?? DateTime.now(),
       ),
+      helpText: "Select Date Range",
       builder: (context, child) {
         return Theme(
           data: Theme.of(context).copyWith(
@@ -60,8 +76,36 @@ class _MonthSelectorState extends State<MonthSelector> {
               surface: Colors.white,
               onSurface: Colors.black,
             ),
+            textTheme: TextTheme(
+              titleMedium: TextStyle(
+                color: primaryColor,
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+              ),
+              bodyMedium: TextStyle(
+                color: Colors.black87,
+                fontSize: 14,
+              ),
+            ),
           ),
-          child: child!,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Padding(
+              //   padding: const EdgeInsets.all(16.0),
+              //   child: Text(
+              //     "",
+              //     style: TextStyle(
+              //       color: primaryColor,
+              //       fontSize: 14,
+              //       fontWeight: FontWeight.w500,
+              //     ),
+              //     textAlign: TextAlign.center,
+              //   ),
+              // ),
+              Expanded(child: child!),
+            ],
+          ),
         );
       },
     );
@@ -91,7 +135,7 @@ class _MonthSelectorState extends State<MonthSelector> {
   @override
   Widget build(BuildContext context) {
     return Container(
-      height: 35,
+      height: MediaQuery.of(context).size.height * 0.07,
       child: Row(
         children: [
           Expanded(
@@ -120,8 +164,8 @@ class _MonthSelectorState extends State<MonthSelector> {
                     widget.onDateRangeSelected(month, month);
                   },
                   child: Container(
-                    margin: EdgeInsets.symmetric(horizontal: 4),
-                    padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    margin: EdgeInsets.symmetric(horizontal: 2),
+                    padding: EdgeInsets.symmetric(horizontal: 8, vertical: 6),
                     decoration: BoxDecoration(
                       color: isInRange ? primaryColor : Colors.white,
                       borderRadius: BorderRadius.circular(15),
