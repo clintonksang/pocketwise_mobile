@@ -19,7 +19,7 @@ class Transactions extends StatefulWidget {
 
 class TransactionsState extends State {
   final ExpenseRepository _expenseRepository = ExpenseRepository();
-  int touchedIndex = -1;
+  String? selectedCategory;
   bool isLoading = true;
   Map<String, double> categoryExpenses = {};
   Map<String, Color> categoryColors = {};
@@ -109,21 +109,35 @@ class TransactionsState extends State {
     );
   }
 
+  void _handleCategorySelect(String category) {
+    setState(() {
+      if (selectedCategory == category.toLowerCase()) {
+        selectedCategory = null;
+      } else {
+        selectedCategory = category.toLowerCase();
+      }
+    });
+  }
+
   List<PieChartSectionData> showingSections() {
     final total =
         categoryExpenses.values.fold(0.0, (sum, value) => sum + value);
     if (total == 0) return [];
 
     return categoryExpenses.entries.map((entry) {
-      final index = categoryExpenses.keys.toList().indexOf(entry.key);
-      final isTouched = index == touchedIndex;
-      final fontSize = isTouched ? 25.0 : 16.0;
-      final radius = isTouched ? 110.0 : 100.0;
+      final isSelected = selectedCategory == entry.key.toLowerCase();
+      final fontSize = isSelected ? 25.0 : 16.0;
+      final radius = isSelected ? 110.0 : 100.0;
       final percentage = (entry.value / total * 100).toStringAsFixed(1);
       const shadows = [Shadow(color: Colors.black, blurRadius: 2)];
 
+      final baseColor = categoryColors[entry.key.toLowerCase()] ?? primaryColor;
+      final color = selectedCategory == null || isSelected
+          ? baseColor
+          : baseColor.withOpacity(0.2);
+
       return PieChartSectionData(
-        color: categoryColors[entry.key.toLowerCase()] ?? primaryColor,
+        color: color,
         value: entry.value,
         title: '$percentage%',
         radius: radius,
@@ -136,6 +150,8 @@ class TransactionsState extends State {
       );
     }).toList();
   }
+
+  //
 
   @override
   Widget build(BuildContext context) {
@@ -188,19 +204,18 @@ class TransactionsState extends State {
                                     pieTouchData: PieTouchData(
                                       touchCallback: (FlTouchEvent event,
                                           pieTouchResponse) {
-                                        setState(() {
-                                          if (!event
-                                                  .isInterestedForInteractions ||
-                                              pieTouchResponse == null ||
-                                              pieTouchResponse.touchedSection ==
-                                                  null) {
-                                            touchedIndex = -1;
-                                            return;
-                                          }
-                                          touchedIndex = pieTouchResponse
-                                              .touchedSection!
-                                              .touchedSectionIndex;
-                                        });
+                                        if (!event
+                                                .isInterestedForInteractions ||
+                                            pieTouchResponse == null ||
+                                            pieTouchResponse.touchedSection ==
+                                                null) {
+                                          return;
+                                        }
+                                        final category = categoryExpenses.keys
+                                            .elementAt(pieTouchResponse
+                                                .touchedSection!
+                                                .touchedSectionIndex);
+                                        _handleCategorySelect(category);
                                       },
                                     ),
                                     borderData: FlBorderData(show: false),
@@ -228,56 +243,81 @@ class TransactionsState extends State {
                                       symbol: 'KES ',
                                       decimalDigits: 2,
                                     ).format(entry.value);
+                                    final isSelected = selectedCategory ==
+                                        entry.key.toLowerCase();
+                                    final baseColor = categoryColors[
+                                            entry.key.toLowerCase()] ??
+                                        primaryColor;
 
                                     return Expanded(
-                                      child: Column(
-                                        mainAxisSize: MainAxisSize.min,
-                                        children: [
-                                          Row(
+                                      child: GestureDetector(
+                                        onTap: () =>
+                                            _handleCategorySelect(entry.key),
+                                        child: Container(
+                                          padding: const EdgeInsets.all(4),
+                                          decoration: BoxDecoration(
+                                            color: isSelected
+                                                ? baseColor.withOpacity(0.1)
+                                                : Colors.transparent,
+                                            borderRadius:
+                                                BorderRadius.circular(8),
+                                          ),
+                                          child: Column(
                                             mainAxisSize: MainAxisSize.min,
                                             children: [
-                                              Container(
-                                                width: 8,
-                                                height: 8,
-                                                decoration: BoxDecoration(
-                                                  color: categoryColors[entry
-                                                          .key
-                                                          .toLowerCase()] ??
-                                                      primaryColor,
-                                                  shape: BoxShape.circle,
-                                                ),
-                                              ),
-                                              const SizedBox(width: 4),
-                                              Flexible(
-                                                child: Text(
-                                                  entry.key.toUpperCase(),
-                                                  style: const TextStyle(
-                                                    fontSize: 10,
-                                                    fontWeight: FontWeight.bold,
+                                              Row(
+                                                mainAxisSize: MainAxisSize.min,
+                                                children: [
+                                                  Container(
+                                                    width: 8,
+                                                    height: 8,
+                                                    decoration: BoxDecoration(
+                                                      color: baseColor,
+                                                      shape: BoxShape.circle,
+                                                    ),
                                                   ),
-                                                  overflow:
-                                                      TextOverflow.ellipsis,
+                                                  const SizedBox(width: 4),
+                                                  Flexible(
+                                                    child: Text(
+                                                      entry.key.toUpperCase(),
+                                                      style: TextStyle(
+                                                        fontSize: 10,
+                                                        fontWeight:
+                                                            FontWeight.bold,
+                                                        color: isSelected
+                                                            ? Colors.black
+                                                            : Colors.black54,
+                                                      ),
+                                                      overflow:
+                                                          TextOverflow.ellipsis,
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                              const SizedBox(height: 4),
+                                              Text(
+                                                amount,
+                                                style: TextStyle(
+                                                  fontSize: 10,
+                                                  color: isSelected
+                                                      ? Colors.black87
+                                                      : Colors.black54,
+                                                ),
+                                                overflow: TextOverflow.ellipsis,
+                                              ),
+                                              Text(
+                                                '($percentage%)',
+                                                style: TextStyle(
+                                                  fontSize: 10,
+                                                  color: isSelected
+                                                      ? Colors.grey
+                                                      : Colors.grey
+                                                          .withOpacity(0.6),
                                                 ),
                                               ),
                                             ],
                                           ),
-                                          const SizedBox(height: 4),
-                                          Text(
-                                            amount,
-                                            style: const TextStyle(
-                                              fontSize: 10,
-                                              color: Colors.black87,
-                                            ),
-                                            overflow: TextOverflow.ellipsis,
-                                          ),
-                                          Text(
-                                            '($percentage%)',
-                                            style: const TextStyle(
-                                              fontSize: 10,
-                                              color: Colors.grey,
-                                            ),
-                                          ),
-                                        ],
+                                        ),
                                       ),
                                     );
                                   }).toList(),
