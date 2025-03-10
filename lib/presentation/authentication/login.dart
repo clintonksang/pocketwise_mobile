@@ -22,7 +22,7 @@ class Login extends StatefulWidget {
 class _LoginState extends State<Login> {
   final phoneController = TextEditingController();
   final passwordController = TextEditingController();
-  bool isPhoneSelected = true;
+  bool isPhoneSelected = false;
   bool isLoading = false;
   String phoneFromCache = '';
   final logger = Logger();
@@ -80,32 +80,29 @@ class _LoginState extends State<Login> {
         pagedescription: 'login.description'.tr(),
         children: Column(
           children: [
-            SwitchListTile(
-              title: Text(isPhoneSelected ? "Use Email" : "Use Phone"),
-              value: !isPhoneSelected,
-              onChanged: (bool value) {
-                setState(() {
-                  isPhoneSelected = !value;
-                });
-              },
-              secondary: Icon(isPhoneSelected ? Icons.phone : Icons.email),
+            // SwitchListTile(
+            //   title: Text(isPhoneSelected ? "Use Email" : "Use Phone"),
+            //   value: !isPhoneSelected,
+            //   onChanged: (bool value) {
+            //     setState(() {
+            //       isPhoneSelected = !value;
+            //     });
+            //   },
+            //   secondary: Icon(isPhoneSelected ? Icons.phone : Icons.email),
+            // ),
+            // isPhoneSelected
+            //     ? Phonefield(
+            //         phoneController: phoneController,
+            //       )
+            // :
+            CustomTextField(
+              controller: phoneController,
+              hint: "register.hint_email".tr(),
+              title: "login.email".tr(),
+              keyboardType: isPhoneSelected
+                  ? TextInputType.phone
+                  : TextInputType.emailAddress,
             ),
-            isPhoneSelected
-                ? Phonefield(
-                    phoneController: phoneController,
-                  )
-                : CustomTextField(
-                    controller: phoneController,
-                    hint: isPhoneSelected
-                        ? "register.hint_phone".tr()
-                        : "register.hint_email".tr(),
-                    title: isPhoneSelected
-                        ? "login.phone".tr()
-                        : "login.email".tr(),
-                    keyboardType: isPhoneSelected
-                        ? TextInputType.phone
-                        : TextInputType.emailAddress,
-                  ),
             SizedBox(height: 20),
             CustomTextField(
               controller: passwordController,
@@ -246,6 +243,8 @@ class _LoginState extends State<Login> {
                   await SharedPreferences.getInstance();
               await prefs.setString('phone', enteredPhone);
               phoneFromCache = enteredPhone;
+              print("enteredPhone : $enteredPhone");
+              await saveUserIDToNative(enteredPhone);
             }
 
             try {

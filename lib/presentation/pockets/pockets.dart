@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_expandable_fab/flutter_expandable_fab.dart';
 import 'package:logger/web.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:pocketwise/data/data.dart';
 import 'package:pocketwise/models/budget.model.dart';
 import 'package:pocketwise/models/categories.model.dart';
@@ -25,6 +26,12 @@ import 'package:tutorial_coach_mark/tutorial_coach_mark.dart';
 import 'package:pocketwise/utils/widgets/pockets/month_selector.dart';
 import 'package:pocketwise/utils/constants/formatting.dart';
 import 'package:intl/intl.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:pocketwise/utils/widgets/pockets/budget/budget_card.dart';
+import 'package:pocketwise/utils/widgets/pockets/tracker_card.dart';
+import 'package:pocketwise/utils/widgets/pockets/maincard.dart';
+import 'package:pocketwise/utils/widgets/pockets/pocketscards.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 import '../../models/pocket.model.dart';
 import '../../provider/income_provider.dart';
@@ -33,10 +40,6 @@ import '../../router/approuter.dart';
 import '../../utils/constants/textutil.dart';
 import '../../utils/globals.dart';
 import '../../utils/tutorial_coach.dart';
-import '../../utils/widgets/pockets/budget/budget_card.dart';
-import '../../utils/widgets/pockets/tracker_card.dart';
-import '../../utils/widgets/pockets/maincard.dart';
-import '../../utils/widgets/pockets/pocketscards.dart';
 
 class Pockets extends StatefulWidget {
   final Function(bool) onScrollChange;
@@ -53,6 +56,9 @@ class _PocketsState extends State<Pockets> {
   final ExpenseRepository expenseRepository = ExpenseRepository();
   late Future<List<ExpenseModel>> _futureExpenses;
   DateTime? _lastBackPressTime;
+  String firstName = '';
+  String phoneNo = '';
+  String lastName = '';
 
   double totalIncome = 0.0;
 
@@ -69,16 +75,22 @@ class _PocketsState extends State<Pockets> {
 
   int selectedbutton = 1;
   String selectedButtonText = 'budget';
+  bool hasNotificationPermission = false;
+  bool hasSMSPermission = false;
+
+  bool get hasAllPermissions => hasNotificationPermission && hasSMSPermission;
 
   @override
   void initState() {
     super.initState();
     _scrollController.addListener(_toggleFabExpansion);
     _initializeData();
+    _loadUserData();
+    _checkNotificationPermission();
+    _checkSMSPermission();
     _futureExpenses = expenseRepository.getTransactionsSortedByDate();
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      // showTutorial(context);
       setState(() {
         selectedbutton = 1;
         selectedButtonText = 'budget';
@@ -90,13 +102,133 @@ class _PocketsState extends State<Pockets> {
     await _loadTotalIncome();
   }
 
+  Future<void> _loadUserData() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final String? phoneNumber = prefs.getString('phone');
+      phoneNo = phoneNumber ?? '';
+      if (phoneNumber != null) {
+        final userDoc = await FirebaseFirestore.instance
+            .collection('users')
+            .where('phoneNumber', isEqualTo: phoneNumber)
+            .get();
+
+        if (userDoc.docs.isNotEmpty) {
+          final userData = userDoc.docs.first.data();
+          setState(() {
+            firstName = userData['firstname'] ?? '';
+            lastName = userData['lastname'] ?? '';
+          });
+        }
+      }
+    } catch (e) {
+      Logger().e('Error loading user data: $e');
+    }
+  }
+
+  Future<void> _checkNotificationPermission() async {
+    final status = await Permission.notification.status;
+    setState(() {
+      hasNotificationPermission = status.isGranted;
+    });
+  }
+
+  Future<void> _requestNotificationPermission() async {
+    final status = await Permission.notification.request();
+    setState(() {
+      hasNotificationPermission = status.isGranted;
+    });
+
+    if (!status.isGranted) {
+      if (mounted) {
+        showDialog(
+          context: context,
+          builder: (BuildContext context) {
+            return AlertDialog(
+              title: Text('Enable Notifications'),
+              content: Text(
+                  'To get updates about your expenses and budgets, please enable notifications in your device settings.'),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: Text('Not Now'),
+                ),
+                TextButton(
+                  onPressed: () {
+                    openAppSettings();
+                    Navigator.pop(context);
+                  },
+                  child: Text('Open Settings'),
+                ),
+              ],
+            );
+          },
+        );
+      }
+    }
+  }
+
+  Future<void> _checkSMSPermission() async {
+    final status = await Permission.sms.status;
+    setState(() {
+      hasSMSPermission = status.isGranted;
+    });
+  }
+
+  Future<void> _requestSMSPermission() async {
+    final status = await Permission.sms.request();
+    setState(() {
+      hasSMSPermission = status.isGranted;
+    });
+
+    if (!status.isGranted) {
+      if (mounted) {
+        showDialog(
+          context: context,
+          builder: (BuildContext context) {
+            return AlertDialog(
+              title: Text('Enable SMS Access'),
+              content: Text(
+                  'To automatically track your expenses from SMS messages, please enable SMS access in your device settings.'),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: Text('Not Now'),
+                ),
+                TextButton(
+                  onPressed: () {
+                    openAppSettings();
+                    Navigator.pop(context);
+                  },
+                  child: Text('Open Settings'),
+                ),
+              ],
+            );
+          },
+        );
+      }
+    }
+  }
+
   // Call this function if data needs refreshing, like after a save operation
   reload() async {
-    await expenseRepository.refreshTransactions();
-    await _loadTotalIncome();
-    setState(() {
-      _futureExpenses = expenseRepository.getTransactionsSortedByDate();
-    });
+    try {
+      await Future.wait([
+        expenseRepository.refreshTransactions(),
+        incomeRepository.refreshTransactions(),
+      ]);
+
+      await _loadTotalIncome();
+      await _loadPocketTotals();
+
+      if (mounted) {
+        setState(() {
+          _futureExpenses = expenseRepository.getTransactionsSortedByDate();
+        });
+      }
+    } catch (e) {
+      Logger().e('Error reloading data: $e');
+    }
   }
 
   Future<void> _loadPocketTotals() async {
@@ -126,11 +258,17 @@ class _PocketsState extends State<Pockets> {
   }
 
   Future<void> _loadTotalIncome() async {
-    double total = await incomeRepository.getTotalIncome();
-    Logger().i('initstate total income: $total');
-    setState(() {
-      totalIncome = total;
-    });
+    try {
+      double total = await incomeRepository.getTotalIncome();
+      Logger().i('Loading total income: $total');
+      if (mounted) {
+        setState(() {
+          totalIncome = total;
+        });
+      }
+    } catch (e) {
+      Logger().e('Error loading total income: $e');
+    }
   }
 
   Widget budgetAndTracker() {
@@ -244,6 +382,15 @@ class _PocketsState extends State<Pockets> {
     return true;
   }
 
+  Future<void> _requestPermissions() async {
+    if (!hasNotificationPermission) {
+      await _requestNotificationPermission();
+    }
+    if (!hasSMSPermission) {
+      await _requestSMSPermission();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     BudgetRepository budgetRepository = BudgetRepository();
@@ -276,22 +423,48 @@ class _PocketsState extends State<Pockets> {
                         SizedBox(height: defaultPadding),
                         Row(
                           children: [
-                            Toptext(),
+                            Toptext(firstName: firstName),
                             Spacer(),
-                            IconButton(
-                              onPressed: () {
-                                // Provider.of<IncomeProvider>(context,
-                                //         listen: false)
-                                //     .clearAllIncomes();
-                              },
-                              icon: Image.asset('assets/images/bell.png',
-                                  width: 24, height: 24, color: Colors.black),
+                            Stack(
+                              children: [
+                                IconButton(
+                                  onPressed: () {
+                                    if (!hasAllPermissions) {
+                                      _requestPermissions();
+                                      saveUserIDToNative(phoneNo);
+                                    }
+                                  },
+                                  icon: Image.asset(
+                                    'assets/images/bell.png',
+                                    width: 24,
+                                    height: 24,
+                                    color: hasAllPermissions
+                                        ? Colors.black
+                                        : Colors.grey,
+                                  ),
+                                ),
+                                if (!hasAllPermissions)
+                                  Positioned(
+                                    right: 8,
+                                    top: 8,
+                                    child: Container(
+                                      width: 8,
+                                      height: 8,
+                                      decoration: BoxDecoration(
+                                        color: Colors.red,
+                                        shape: BoxShape.circle,
+                                      ),
+                                    ),
+                                  ),
+                              ],
                             ),
+                            SizedBox(width: 8),
                             CircleAvatar(
                               backgroundColor: black,
                               radius: 24,
                               child: Text(
-                                'CS',
+                                '${firstName.isNotEmpty ? firstName[0] : ''}${lastName.isNotEmpty ? lastName[0] : ''}'
+                                    .toUpperCase(),
                                 style: AppTextStyles.normal
                                     .copyWith(color: Colors.white),
                               ),
@@ -361,81 +534,8 @@ class _PocketsState extends State<Pockets> {
                             ).largeBold(),
                           ),
                         ),
-
                         SizedBox(height: heightPadding),
                         ExpenseList(futureExpenses: _futureExpenses),
-                        // Container(
-                        //   width: MediaQuery.of(context).size.width,
-                        //   height: MediaQuery.of(context).size.height * .46,
-                        //   decoration: ShapeDecoration(
-                        //     shape: RoundedRectangleBorder(
-                        //       borderRadius: BorderRadius.circular(18.0),
-                        //     ),
-                        //     color: white,
-                        //   ),
-                        // ),
-
-                        // budgetAndTracker(),
-
-                        // Container(
-                        //   width: MediaQuery.of(context).size.width,
-                        //   height: selectedButtonText != 'budget'
-                        //       ? MediaQuery.of(context).size.height * .32
-                        //       : MediaQuery.of(context).size.height * .46,
-                        //   decoration: ShapeDecoration(
-                        //     shape: RoundedRectangleBorder(
-                        //       borderRadius: BorderRadius.circular(18.0),
-                        //     ),
-                        //     color: white,
-                        //   ),
-                        //   child: Padding(
-                        //       padding: const EdgeInsets.all(8.0),
-                        //       child: selectedButtonText == 'budget'
-                        //           ? BudgetCard(hasBudget: false)
-                        //           : ListView.builder(
-                        //               scrollDirection: Axis.horizontal,
-                        //               itemCount: selectedItems.length,
-                        //               itemBuilder: (context, index) {
-                        //                 return TrackerCard(
-                        //                   key: selectedItems[index].key,
-                        //                   categoriesModel: selectedItems[index],
-                        //                 );
-                        //               },
-                        //             )
-                        // Row(
-                        //     children: [
-                        //       TrackerCard(
-                        //           key: needsKey,
-                        //           categoriesModel: needsCategory),
-                        //       TrackerCard(
-                        //           key: wantsKey,
-                        //           categoriesModel: wantsCategory),
-                        //       TrackerCard(
-                        //           key: savingsInvestmentsKey,
-                        //           categoriesModel:
-                        //               savingsInvestmentsCategory),
-                        //       TrackerCard(
-                        //           key: debtKey,
-                        //           categoriesModel: debtCategory),
-                        //     ],
-                        //   ),
-                        // ),
-                        // ),
-                        // SizedBox(height: heightPadding),
-                        // selectedButtonText != 'budget'
-                        //     ? Padding(
-                        //         padding: const EdgeInsets.only(top: 5),
-                        //         child: Align(
-                        //           alignment: Alignment.centerLeft,
-                        //           child: Text(
-                        //             'home.transactions'.tr(),
-                        //           ).largeBold(),
-                        //         ),
-                        //       )
-                        //     : SizedBox(height: 0),
-                        // selectedButtonText != 'budget'
-                        //     ? ExpenseList()
-                        //     : SizedBox(height: 0),
                       ],
                     ),
                   ),

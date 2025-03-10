@@ -10,6 +10,7 @@ import '../models/income.model.dart';
 class IncomeRepository {
   static const String CACHE_KEY_INCOMES = 'cached_incomes';
   static const String CACHE_TIMESTAMP_KEY = 'incomes_cache_timestamp';
+  static const String CACHE_TOTAL_INCOME_KEY = 'cached_total_income';
   static const Duration CACHE_DURATION = Duration(minutes: 30);
 
   IncomeRepository() {
@@ -26,7 +27,7 @@ class IncomeRepository {
 
   // Initialize repository and calculate initial total
   Future<void> _initializeRepository() async {
-    await _calculateTotalIncome();
+    await _loadAndBroadcastTotalIncome();
     await getAllTransactions();
   }
 
@@ -36,6 +37,25 @@ class IncomeRepository {
     await prefs.setString(CACHE_KEY_INCOMES, incomesJson);
     await prefs.setInt(
         CACHE_TIMESTAMP_KEY, DateTime.now().millisecondsSinceEpoch);
+
+    // Calculate and cache total income
+    double total = incomes.fold(0.0, (sum, income) => sum + income.amount);
+    await prefs.setDouble(CACHE_TOTAL_INCOME_KEY, total);
+    _incomeStreamController.add(total);
+  }
+
+  Future<void> _loadAndBroadcastTotalIncome() async {
+    final prefs = await SharedPreferences.getInstance();
+    double total = prefs.getDouble(CACHE_TOTAL_INCOME_KEY) ?? 0.0;
+
+    // If no cached total, calculate from Firebase
+    if (total == 0.0) {
+      final transactions = await getAllTransactions();
+      total = transactions.fold(0.0, (sum, income) => sum + income.amount);
+      await prefs.setDouble(CACHE_TOTAL_INCOME_KEY, total);
+    }
+
+    _incomeStreamController.add(total);
   }
 
   Future<List<IncomeModel>?> _getFromCache() async {
@@ -66,8 +86,6 @@ class IncomeRepository {
     final currentIncomes = await getAllTransactions();
     currentIncomes.add(transaction);
     await _saveToCache(currentIncomes);
-
-    _calculateTotalIncome(); // Update stream with new total
   }
 
   Future<void> saveincometoFirebase(IncomeModel incomeModel) async {
@@ -119,7 +137,6 @@ class IncomeRepository {
         await _saveToCache(updatedIncomes);
 
         Logger().i('Income deleted successfully!');
-        _calculateTotalIncome(); // Update stream with new total
       } catch (e) {
         Logger().e('Error deleting income: $e');
         rethrow;
@@ -190,12 +207,13 @@ class IncomeRepository {
 
         await batch.commit();
 
-        // Clear cache
+        // Clear all cache
         await prefs.remove(CACHE_KEY_INCOMES);
         await prefs.remove(CACHE_TIMESTAMP_KEY);
+        await prefs.remove(CACHE_TOTAL_INCOME_KEY);
 
+        _incomeStreamController.add(0.0);
         Logger().i('All incomes cleared from Firebase and cache');
-        _calculateTotalIncome(); // Update the stream to reflect the new state
       } catch (e) {
         Logger().e('Error clearing incomes: $e');
         rethrow;
@@ -234,25 +252,27 @@ class IncomeRepository {
 
   // Calculate the total income
   Future<double> getTotalIncome() async {
-    final List<IncomeModel> transactions = await getAllTransactions();
-    double total = transactions.fold(
-        0.0,
-        (total, transaction) =>
-            double.parse(total.toString()) +
-            double.parse(transaction.amount.toString()));
-    Logger().w('total income: $total');
-    return total;
-  }
+    final prefs = await SharedPreferences.getInstance();
+    double cachedTotal = prefs.getDouble(CACHE_TOTAL_INCOME_KEY) ?? 0.0;
 
-  Future<void> _calculateTotalIncome() async {
-    double totalIncome = await getTotalIncome();
-    _incomeStreamController.add(totalIncome);
+    if (cachedTotal > 0) {
+      return cachedTotal;
+    }
+
+    final List<IncomeModel> transactions = await getAllTransactions();
+    double total = transactions.fold(0.0, (sum, income) => sum + income.amount);
+    await prefs.setDouble(CACHE_TOTAL_INCOME_KEY, total);
+    return total;
   }
 
   Future<void> refreshTransactions() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(CACHE_KEY_INCOMES);
     await prefs.remove(CACHE_TIMESTAMP_KEY);
-    await getAllTransactions(); // This will fetch fresh data and update cache
+    await prefs.remove(CACHE_TOTAL_INCOME_KEY);
+
+    // This will fetch fresh data, update cache, and recalculate total
+    await getAllTransactions();
+    await _loadAndBroadcastTotalIncome();
   }
 }
