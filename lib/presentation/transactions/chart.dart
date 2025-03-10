@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:pocketwise/utils/constants/colors.dart';
 import 'package:pocketwise/provider/income_provider.dart';
 import 'package:pocketwise/repository/expense.repo.dart';
+import 'package:pocketwise/repository/budget.repo.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 
@@ -18,6 +19,7 @@ class BarChartSample2 extends StatefulWidget {
 class BarChartSample2State extends State<BarChartSample2> {
   final double width = 7;
   final ExpenseRepository _expenseRepository = ExpenseRepository();
+  String selectedCategory = 'all';
 
   List<BarChartGroupData> rawBarGroups = [];
   List<BarChartGroupData> showingBarGroups = [];
@@ -42,28 +44,46 @@ class BarChartSample2State extends State<BarChartSample2> {
       final now = DateTime.now();
       List<BarChartGroupData> items = [];
 
+      // Get all incomes first (these will be constant)
+      final incomes =
+          await Provider.of<IncomeProvider>(context, listen: false).incomes;
+      Map<int, double> monthlyIncomes = {};
+
+      // Calculate income for each month
+      for (var income in incomes) {
+        try {
+          final incomeDate = DateTime.parse(income.date);
+          final monthKey = (incomeDate.year - now.year) * 12 +
+              (incomeDate.month - now.month);
+          monthlyIncomes[monthKey] =
+              (monthlyIncomes[monthKey] ?? 0) + income.amount;
+        } catch (e) {
+          continue;
+        }
+      }
+
       // Get last 6 months of data
       for (int i = 5; i >= 0; i--) {
         final month = DateTime(now.year, now.month - i, 1);
-        final monthExpense =
-            await _expenseRepository.getTotalExpenseByMonth(month);
+        double monthExpense = 0;
 
-        // Get all incomes and filter for this month
-        final incomes =
-            await Provider.of<IncomeProvider>(context, listen: false).incomes;
-        double monthIncome = 0;
-        for (var income in incomes) {
-          try {
-            final incomeDate = DateTime.parse(income.date);
-            if (incomeDate.year == month.year &&
-                incomeDate.month == month.month) {
-              monthIncome += income.amount;
-            }
-          } catch (e) {
-            // Skip invalid dates
-            continue;
-          }
+        if (selectedCategory == 'all') {
+          monthExpense = await _expenseRepository.getTotalExpenseByMonth(month);
+        } else {
+          // Get expenses for specific category
+          final expenses = await _expenseRepository.getAllTransactions();
+          monthExpense = expenses.where((expense) {
+            final expenseDate = DateTime.parse(expense.dateCreated);
+            return expenseDate.year == month.year &&
+                expenseDate.month == month.month &&
+                expense.category.toLowerCase() ==
+                    selectedCategory.toLowerCase();
+          }).fold(0, (sum, expense) => sum + double.parse(expense.amount));
         }
+
+        // Get income for this month (or 0 if no income)
+        final monthKey = -i; // Negative because we're counting backwards
+        final monthIncome = monthlyIncomes[monthKey] ?? 0;
 
         items.add(makeGroupData(5 - i, monthIncome, monthExpense));
       }
@@ -84,6 +104,61 @@ class BarChartSample2State extends State<BarChartSample2> {
     }
   }
 
+  Widget _buildCategoryFilter() {
+    return Consumer<BudgetRepository>(
+      builder: (context, budgetRepository, child) {
+        return SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: Row(
+            children: [
+              _buildCategoryChip('All', 'all'),
+              ...budgetRepository.categories.map((category) =>
+                  _buildCategoryChip(category.title, category.type)),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildCategoryChip(String label, String value) {
+    final isSelected = selectedCategory == value;
+    final color = value == 'all'
+        ? primaryColor
+        : value == 'needs'
+            ? needsColor
+            : value == 'wants'
+                ? wantsColor
+                : value == 'savings'
+                    ? sandicolor
+                    : debtColor;
+
+    return Padding(
+      padding: const EdgeInsets.only(right: 8.0),
+      child: FilterChip(
+        label: Text(
+          label,
+          style: TextStyle(
+            color: isSelected ? Colors.white : Colors.black87,
+            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+          ),
+        ),
+        selected: isSelected,
+        backgroundColor: Colors.white,
+        selectedColor: color,
+        onSelected: (bool selected) {
+          if (selected) {
+            setState(() {
+              selectedCategory = value;
+            });
+            _loadData();
+          }
+        },
+        showCheckmark: false,
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return AspectRatio(
@@ -96,15 +171,14 @@ class BarChartSample2State extends State<BarChartSample2> {
             Row(
               mainAxisSize: MainAxisSize.min,
               children: <Widget>[
-                makeTransactionsIcon(),
                 const SizedBox(width: 38),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
-                    children: const [
+                    children: [
                       Text(
                         'Monthly Overview',
-                        style: TextStyle(color: Colors.white, fontSize: 22),
+                        style: TextStyle(color: primaryColor, fontSize: 22),
                         overflow: TextOverflow.ellipsis,
                       ),
                       Text(
@@ -118,7 +192,9 @@ class BarChartSample2State extends State<BarChartSample2> {
                 ),
               ],
             ),
-            const SizedBox(height: 38),
+            const SizedBox(height: 16),
+            _buildCategoryFilter(),
+            const SizedBox(height: 22),
             Expanded(
               child: isLoading
                   ? const Center(child: CircularProgressIndicator())
@@ -137,7 +213,6 @@ class BarChartSample2State extends State<BarChartSample2> {
                           child: SizedBox(
                             width: MediaQuery.of(context).size.width * 0.8,
                             child: BarChart(
-                              
                               BarChartData(
                                 maxY: _calculateMaxY(),
                                 barTouchData: BarTouchData(
@@ -194,7 +269,6 @@ class BarChartSample2State extends State<BarChartSample2> {
 
                                       showingBarGroups = List.of(rawBarGroups);
                                       if (touchedGroupIndex != -1) {
-                                        // Highlight the selected bars by slightly increasing their width
                                         showingBarGroups[touchedGroupIndex] =
                                             showingBarGroups[touchedGroupIndex]
                                                 .copyWith(
@@ -203,8 +277,7 @@ class BarChartSample2State extends State<BarChartSample2> {
                                               .barRods
                                               .map((rod) {
                                             return rod.copyWith(
-                                              width: width *
-                                                  1.5, // Make selected bars wider
+                                              width: width * 1.5,
                                               borderRadius:
                                                   const BorderRadius.all(
                                                       Radius.circular(2)),
@@ -264,12 +337,12 @@ class BarChartSample2State extends State<BarChartSample2> {
         if (rod.toY > maxY) maxY = rod.toY;
       }
     }
-    return maxY * 1.2; // Add 20% padding
+    return maxY * 1.2;
   }
 
   double _calculateInterval() {
     final maxY = _calculateMaxY();
-    return maxY / 5; // Show 5 intervals
+    return maxY / 5;
   }
 
   Widget leftTitles(double value, TitleMeta meta) {
@@ -322,45 +395,6 @@ class BarChartSample2State extends State<BarChartSample2> {
           toY: y2,
           color: widget.expenseColor,
           width: width,
-        ),
-      ],
-    );
-  }
-
-  Widget makeTransactionsIcon() {
-    const width = 4.5;
-    const space = 3.5;
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: <Widget>[
-        Container(
-          width: width,
-          height: 10,
-          color: Colors.white.withOpacity(0.4),
-        ),
-        const SizedBox(width: space),
-        Container(
-          width: width,
-          height: 28,
-          color: Colors.white.withOpacity(0.8),
-        ),
-        const SizedBox(width: space),
-        Container(
-          width: width,
-          height: 42,
-          color: Colors.white,
-        ),
-        const SizedBox(width: space),
-        Container(
-          width: width,
-          height: 28,
-          color: Colors.white.withOpacity(0.8),
-        ),
-        const SizedBox(width: space),
-        Container(
-          width: width,
-          height: 10,
-          color: Colors.white.withOpacity(0.4),
         ),
       ],
     );

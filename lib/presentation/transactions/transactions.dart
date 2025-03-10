@@ -13,9 +13,9 @@ class TransactionsPage extends StatelessWidget {
     return Scaffold(
         backgroundColor: backgroundColor,
         appBar: AppBar(
-          backgroundColor: primaryColor,
+          // backgroundColor: primaryColor,
           title: Text('Transactions',
-              style: AppTextStyles.normal.copyWith(color: white)),
+              style: AppTextStyles.normal.copyWith(color: black)),
           automaticallyImplyLeading: false,
         ),
         body: BarChartSample2());

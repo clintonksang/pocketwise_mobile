@@ -132,7 +132,7 @@ class BottomNav extends StatefulWidget {
 }
 
 class _BottomNavState extends State<BottomNav> {
-  final List<String> _tabLabels = ['pockets', "smslistener" 'profile'];
+  final List<String> _tabLabels = ['pockets', "analytics", 'profile'];
 
   @override
   Widget build(BuildContext context) {
