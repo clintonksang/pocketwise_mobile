@@ -7,11 +7,13 @@ import 'package:pocketwise/utils/constants/textutil.dart';
 class MonthSelector extends StatefulWidget {
   final DateTime selectedMonth;
   final Function(DateTime, DateTime) onDateRangeSelected;
+  final bool isCustomRangeSelected;
 
   const MonthSelector({
     Key? key,
     required this.selectedMonth,
     required this.onDateRangeSelected,
+    this.isCustomRangeSelected = false,
   }) : super(key: key);
 
   @override
@@ -28,7 +30,6 @@ class _MonthSelectorState extends State<MonthSelector> {
   @override
   void initState() {
     super.initState();
- 
     currentMonth = DateTime.now();
     _scrollController = ScrollController();
     // Initialize with current month as both start and end date
@@ -91,18 +92,6 @@ class _MonthSelectorState extends State<MonthSelector> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              // Padding(
-              //   padding: const EdgeInsets.all(16.0),
-              //   child: Text(
-              //     "",
-              //     style: TextStyle(
-              //       color: primaryColor,
-              //       fontSize: 14,
-              //       fontWeight: FontWeight.w500,
-              //     ),
-              //     textAlign: TextAlign.center,
-              //   ),
-              // ),
               Expanded(child: child!),
             ],
           ),
@@ -150,19 +139,22 @@ class _MonthSelectorState extends State<MonthSelector> {
                   1,
                 );
 
-                final isInRange = startDate != null &&
+                final isInRange = !widget.isCustomRangeSelected &&
+                    startDate != null &&
                     endDate != null &&
                     month.isAfter(startDate!.subtract(Duration(days: 1))) &&
                     month.isBefore(endDate!.add(Duration(days: 1)));
 
                 return GestureDetector(
-                  onTap: () {
-                    setState(() {
-                      startDate = month;
-                      endDate = month;
-                    });
-                    widget.onDateRangeSelected(month, month);
-                  },
+                  onTap: widget.isCustomRangeSelected
+                      ? null
+                      : () {
+                          setState(() {
+                            startDate = month;
+                            endDate = month;
+                          });
+                          widget.onDateRangeSelected(month, month);
+                        },
                   child: Container(
                     margin: EdgeInsets.symmetric(horizontal: 2),
                     padding: EdgeInsets.symmetric(horizontal: 8, vertical: 6),
@@ -195,9 +187,14 @@ class _MonthSelectorState extends State<MonthSelector> {
               margin: EdgeInsets.only(left: 8),
               padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color:
+                    widget.isCustomRangeSelected ? primaryColor : Colors.white,
                 borderRadius: BorderRadius.circular(15),
-                border: Border.all(color: Colors.grey[300]!),
+                border: Border.all(
+                  color: widget.isCustomRangeSelected
+                      ? primaryColor
+                      : Colors.grey[300]!,
+                ),
               ),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
@@ -205,14 +202,18 @@ class _MonthSelectorState extends State<MonthSelector> {
                   Icon(
                     Icons.date_range,
                     size: 16,
-                    color: primaryColor,
+                    color: widget.isCustomRangeSelected
+                        ? Colors.white
+                        : primaryColor,
                   ),
                   SizedBox(width: 4),
                   Text(
                     'Range',
                     style: AppTextStyles.normal.copyWith(
                       fontSize: 12,
-                      color: primaryColor,
+                      color: widget.isCustomRangeSelected
+                          ? Colors.white
+                          : primaryColor,
                     ),
                   ),
                 ],

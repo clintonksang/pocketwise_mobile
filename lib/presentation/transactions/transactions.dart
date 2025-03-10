@@ -8,6 +8,7 @@ import 'package:pocketwise/utils/widgets/pockets/month_selector.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:logger/logger.dart';
 import 'dart:convert';
 import 'dart:math';
 
@@ -27,6 +28,8 @@ class TransactionsState extends State {
   DateTime selectedMonth = DateTime.now();
   DateTime? startDate;
   DateTime? endDate;
+  double totalAmount = 0.0;
+  List<DateTime> daysWithoutExpenses = [];
 
   @override
   void initState() {
@@ -50,19 +53,55 @@ class TransactionsState extends State {
               startDate!, endDate!);
 
       Map<String, double> expensesByCategory = {};
+      double total = 0.0;
 
+      // Get all dates in the range
+      List<DateTime> allDates = [];
+      DateTime current = startDate!;
+      while (current.isBefore(endDate!.add(Duration(days: 1)))) {
+        allDates.add(current);
+        current = current.add(Duration(days: 1));
+      }
+
+      // Get dates with expenses
+      Set<DateTime> datesWithExpenses = {};
       for (var expense in expenses) {
         final category = expense.category.toLowerCase();
         final amount = double.parse(expense.amount);
         expensesByCategory[category] =
             (expensesByCategory[category] ?? 0) + amount;
+        total += amount;
+
+        // Parse the expense date
+        DateTime? expenseDate;
+        try {
+          expenseDate = DateTime.parse(expense.dateCreated);
+        } catch (e) {
+          try {
+            final DateFormat format = DateFormat("yyyy-MM-dd HH:mm:ss");
+            expenseDate = format.parse(expense.dateCreated);
+          } catch (e) {
+            Logger().e('Error parsing date: ${expense.dateCreated}');
+            continue;
+          }
+        }
+
+        if (expenseDate != null) {
+          datesWithExpenses.add(
+              DateTime(expenseDate.year, expenseDate.month, expenseDate.day));
+        }
       }
+
+      // Find days without expenses
+      daysWithoutExpenses =
+          allDates.where((date) => !datesWithExpenses.contains(date)).toList();
 
       await _loadOrGenerateColors(expensesByCategory.keys.toList());
 
       if (mounted) {
         setState(() {
           categoryExpenses = expensesByCategory;
+          totalAmount = total;
           isLoading = false;
         });
       }
@@ -192,18 +231,62 @@ class TransactionsState extends State {
               MonthSelector(
                 selectedMonth: selectedMonth,
                 onDateRangeSelected: _handleDateRangeSelected,
+                isCustomRangeSelected: startDate != endDate,
               ),
               const SizedBox(height: 16),
-              Text(
-                startDate == endDate
-                    ? 'Expenses by Category'
-                    : 'Expenses by Category (${DateFormat('MMM yyyy').format(startDate!)} - ${DateFormat('MMM yyyy').format(endDate!)})',
-                style: TextStyle(
-                  color: primaryColor,
-                  fontSize: 24,
-                  fontWeight: FontWeight.w500,
+              // Text(
+              //   startDate == endDate
+              //       ? 'Expenses by Category'
+              //       : 'Expenses by Category (${DateFormat('dd MMM yyyy').format(startDate!)} - ${DateFormat('dd MMM yyyy').format(endDate!)})',
+              //   style: TextStyle(
+              //     color: primaryColor,
+              //     fontSize: 24,
+              //     fontWeight: FontWeight.w500,
+              //   ),
+              // ),
+              const SizedBox(height: 8),
+              if (selectedCategory != null) ...[
+                Text(
+                  startDate == endDate
+                      ? 'You spent ${NumberFormat.currency(symbol: 'KES ', decimalDigits: 2).format(categoryExpenses[selectedCategory] ?? 0)} in ${DateFormat('MMMM yyyy').format(startDate!)} on ${selectedCategory!.toUpperCase()}'
+                      : 'You spent ${NumberFormat.currency(symbol: 'KES ', decimalDigits: 2).format(categoryExpenses[selectedCategory] ?? 0)} between ${DateFormat('dd MMM yyyy').format(startDate!)} and ${DateFormat('dd MMM yyyy').format(endDate!)} on ${selectedCategory!.toUpperCase()}',
+                  style: TextStyle(
+                    color: primaryColor,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
-              ),
+                const SizedBox(height: 4),
+                Text(
+                  'Total spent: ${NumberFormat.currency(symbol: 'KES ', decimalDigits: 2).format(totalAmount)}',
+                  style: TextStyle(
+                    color: Colors.black87,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ] else ...[
+                Text(
+                  startDate == endDate
+                      ? 'You spent ${NumberFormat.currency(symbol: 'KES ', decimalDigits: 2).format(totalAmount)} in ${DateFormat('MMMM yyyy').format(startDate!)}'
+                      : 'You spent ${NumberFormat.currency(symbol: 'KES ', decimalDigits: 2).format(totalAmount)} between ${DateFormat('dd MMM yyyy').format(startDate!)} and ${DateFormat('dd MMM yyyy').format(endDate!)}',
+                  style: TextStyle(
+                    color: Colors.black87,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+              if (daysWithoutExpenses.isNotEmpty) ...[
+                const SizedBox(height: 8),
+                Text(
+                  'No expenses on ${daysWithoutExpenses.length} days',
+                  style: TextStyle(
+                    color: Colors.grey[600],
+                    fontSize: 14,
+                  ),
+                ),
+              ],
               Expanded(
                 child: isLoading
                     ? const Center(child: CircularProgressIndicator())
@@ -277,13 +360,19 @@ class TransactionsState extends State {
                                         onTap: () =>
                                             _handleCategorySelect(entry.key),
                                         child: Container(
-                                          padding: const EdgeInsets.all(4),
+                                          padding: const EdgeInsets.all(8),
                                           decoration: BoxDecoration(
                                             color: isSelected
-                                                ? baseColor.withOpacity(0.1)
+                                                ? baseColor.withOpacity(0.15)
                                                 : Colors.transparent,
                                             borderRadius:
-                                                BorderRadius.circular(8),
+                                                BorderRadius.circular(12),
+                                            border: isSelected
+                                                ? Border.all(
+                                                    color: baseColor,
+                                                    width: 1.5,
+                                                  )
+                                                : null,
                                           ),
                                           child: Column(
                                             mainAxisSize: MainAxisSize.min,
@@ -308,7 +397,7 @@ class TransactionsState extends State {
                                                         fontWeight:
                                                             FontWeight.bold,
                                                         color: isSelected
-                                                            ? Colors.black
+                                                            ? baseColor
                                                             : Colors.black54,
                                                       ),
                                                       overflow:
@@ -323,8 +412,11 @@ class TransactionsState extends State {
                                                 style: TextStyle(
                                                   fontSize: 10,
                                                   color: isSelected
-                                                      ? Colors.black87
+                                                      ? baseColor
                                                       : Colors.black54,
+                                                  fontWeight: isSelected
+                                                      ? FontWeight.bold
+                                                      : FontWeight.normal,
                                                 ),
                                                 overflow: TextOverflow.ellipsis,
                                               ),
@@ -333,7 +425,7 @@ class TransactionsState extends State {
                                                 style: TextStyle(
                                                   fontSize: 10,
                                                   color: isSelected
-                                                      ? Colors.grey
+                                                      ? baseColor
                                                       : Colors.grey
                                                           .withOpacity(0.6),
                                                 ),
