@@ -39,15 +39,15 @@ class PocketWiseLogo extends StatelessWidget {
 
 Future<void> saveUserIDToNative(String userID) async {
   const platform = MethodChannel('com.pocketwise.app/simulator');
-  Logger().i('simulateExpense called with userID: $userID');
+  Logger().i('Triggering immediate notification for userID: $userID');
   try {
-    final String result =
-        await platform.invokeMethod('simulateExpenseSMS', {'USERID': userID});
-    Logger().i('Native method result: $result');
+    final String result = await platform.invokeMethod(
+        'simulateExpenseSMS', {'USERID': userID, 'triggerImmediate': true});
+    Logger().i('Notification triggered successfully: $result');
   } on PlatformException catch (e) {
-    Logger().e('Failed to invoke method: ${e.message}');
+    Logger().e('Failed to trigger notification: ${e.message}');
     Logger().e('Error details: ${e.details}');
   } catch (e) {
-    Logger().e('Unexpected error: $e');
+    Logger().e('Unexpected error triggering notification: $e');
   }
 }

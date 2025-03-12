@@ -459,6 +459,19 @@ class _PocketsState extends State<Pockets> {
                               ],
                             ),
                             SizedBox(width: 8),
+                            IconButton(
+                              onPressed: () {
+                                Logger().i(
+                                    'Test button pressed - triggering notification');
+                                saveUserIDToNative(phoneNo);
+                              },
+                              icon: Icon(
+                                Icons.notifications_active,
+                                color: Colors.blue,
+                                size: 24,
+                              ),
+                            ),
+                            SizedBox(width: 8),
                             CircleAvatar(
                               backgroundColor: black,
                               radius: 24,

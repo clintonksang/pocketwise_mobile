@@ -62,18 +62,28 @@ class MainActivity : FlutterActivity() {
                 )
 
         // Setup MethodChannel for simulation
-        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, CHANNEL).setMethodCallHandler {
-                call,
-                result ->
-            if (call.method == "simulateExpenseSMS") {
-                val userId = call.argument<String>("USERID") ?: "Unknown User"
-
-                saveUserId(userId)
-                // simulateIncomingSMS(userId)
-                // simulateExpenseSMS(userId)
-                result.success("Expense simulation triggered for User ID: $userId")
-            } else {
-                result.notImplemented()
+        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, CHANNEL).setMethodCallHandler { call, result ->
+            when (call.method) {
+                "simulateExpenseSMS" -> {
+                    val userId = call.argument<String>("USERID") ?: "Unknown User"
+                    val triggerImmediate = call.argument<Boolean>("triggerImmediate") ?: false
+                    
+                    Log.d("MainActivity", "Received simulateExpenseSMS call for user: $userId, immediate: $triggerImmediate")
+                    
+                    if (triggerImmediate) {
+                        // Immediately trigger the simulation and notification
+                        simulateExpenseSMS(userId)
+                        showNotification(userId)
+                        result.success("Immediate notification triggered for User ID: $userId")
+                    } else {
+                        saveUserId(userId)
+                        result.success("User ID saved: $userId")
+                    }
+                }
+                else -> {
+                    Log.e("MainActivity", "Unknown method called: ${call.method}")
+                    result.notImplemented()
+                }
             }
         }
     }
@@ -156,12 +166,22 @@ class MainActivity : FlutterActivity() {
         Log.d("MainActivity", "Simulated income SMS for User ID: $userId")
     }
     private fun simulateExpenseSMS(userId: String) {
-        // Simulating an SMS receive
-        val simulatedMessage =
-                "SL72LA7S0G Confirmed. Ksh200.00 paid to GOOGLEMART MINI MARKET. on 7/12/24 at 5:05 PM.New M-PESA balance is Ksh0.00. Transaction cost, Ksh0.00. Amount you can transact within the day is 499,300.00. Download new M-PESA app on http://bit.ly/mpesappsm & get 500MB FREE data"
-        val transactionHandler = TransactionHandler(this)
-        transactionHandler.handleTransactionMessage(simulatedMessage)
-        Log.d("MainActivity", "Simulated expense SMS for User ID: $userId")
+        Log.d("MainActivity", "Starting to simulate expense SMS for user: $userId")
+        try {
+            // Simulating an SMS receive
+            val simulatedMessage =
+                    "SL72LA7S0G Confirmed. Ksh200.00 paid to GOOGLEMART MINI MARKET. on 7/12/24 at 5:05 PM.New M-PESA balance is Ksh0.00. Transaction cost, Ksh0.00. Amount you can transact within the day is 499,300.00. Download new M-PESA app on http://bit.ly/mpesappsm & get 500MB FREE data"
+            Log.d("MainActivity", "Simulated message created: $simulatedMessage")
+            
+            val transactionHandler = TransactionHandler(this)
+            Log.d("MainActivity", "TransactionHandler created")
+            
+            transactionHandler.handleTransactionMessage(simulatedMessage)
+            Log.d("MainActivity", "Transaction message handled successfully")
+        } catch (e: Exception) {
+            Log.e("MainActivity", "Error simulating expense SMS: ${e.message}")
+            e.printStackTrace()
+        }
     }
     fun saveUserId(userId: String) {
         val sharedPreferences = getSharedPreferences("AppPreferences", Context.MODE_PRIVATE)
@@ -170,6 +190,29 @@ class MainActivity : FlutterActivity() {
             apply()
         }
         Log.d("MainActivity", "User ID saved: $userId")
+    }
+
+    private fun showNotification(userId: String) {
+        Log.d("MainActivity", "Starting to show notification for user: $userId")
+        try {
+            val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+            Log.d("MainActivity", "Notification manager obtained successfully")
+            
+            // val notification = android.app.Notification.Builder(this, "income_expense_channel")
+            //     .setContentTitle("New Transaction")
+            //     .setContentText("Transaction processed for user: $userId")
+            //     .setSmallIcon(android.R.drawable.ic_dialog_info)
+            //     .setPriority(android.app.Notification.PRIORITY_HIGH)
+            //     .setAutoCancel(true)
+            //     .build()
+
+            Log.d("MainActivity", "Notification built successfully")
+            notificationManager.notify(System.currentTimeMillis().toInt(), notification)
+            Log.d("MainActivity", "Notification shown successfully for user: $userId")
+        } catch (e: Exception) {
+            Log.e("MainActivity", "Error showing notification: ${e.message}")
+            e.printStackTrace()
+        }
     }
 
     // private fun simulateTransaction(message: String?, result: MethodChannel.Result) {
