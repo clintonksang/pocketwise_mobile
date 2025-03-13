@@ -1,6 +1,5 @@
 package com.pocketwise.app
 
-import android.app.NotificationManager
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
@@ -46,9 +45,5 @@ class ExpenseNotificationAction : BroadcastReceiver() {
         } else {
             Log.e("ExpenseNotificationAction", "Missing required data: userId=${userId != null}, category=${category != null}")
         }
-
-        // Dismiss the notification
-        val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-        notificationManager.cancel(2)
     }
 }

@@ -55,6 +55,11 @@ class NotificationReceiver : BroadcastReceiver() {
                     // Save to Firebase
                     saveToFirebase.saveExpense(transaction)
                     Log.d("NotificationReceiver", "Transaction saved to Firebase with category: $category")
+
+                    // Dismiss the notification
+                    val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+                    notificationManager.cancelAll()  // This will dismiss all notifications
+                    Log.d("NotificationReceiver", "Notification dismissed after saving transaction")
                 } else {
                     Log.e("NotificationReceiver", "No user ID found")
                 }
@@ -107,6 +112,8 @@ class NotificationHandler(private val context: Context) {
         Log.d("NotificationHandler", "Sender: $sender")
         Log.d("NotificationHandler", "Categories: $categories")
 
+        val notificationId = System.currentTimeMillis().toInt()
+        
         // Create the notification layout
         val remoteViews = RemoteViews(context.packageName, R.layout.notification_expense_dynamic)
         
@@ -116,15 +123,36 @@ class NotificationHandler(private val context: Context) {
         remoteViews.setTextViewText(R.id.notification_merchant, sender)
 
         // Create category buttons
-        val categoryButtons = categories.take(3).mapIndexed { index, category ->
+        categories.take(3).forEachIndexed { index, category ->
             val buttonId = when (index) {
                 0 -> R.id.category_button_1
                 1 -> R.id.category_button_2
                 2 -> R.id.category_button_3
                 else -> R.id.category_button_1
             }
+            
+            // Set button text and make it visible
             remoteViews.setTextViewText(buttonId, category)
             remoteViews.setViewVisibility(buttonId, View.VISIBLE)
+            
+            // Create intent for this category
+            val intent = Intent(context, NotificationReceiver::class.java).apply {
+                action = "CATEGORY_SELECTED"
+                putExtra("amount", amount)
+                putExtra("merchant", sender)
+                putExtra("message", message)
+                putExtra("category", category)
+            }
+
+            val pendingIntent = PendingIntent.getBroadcast(
+                context,
+                index,
+                intent,
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            )
+
+            // Set click listener for the button
+            remoteViews.setOnClickPendingIntent(buttonId, pendingIntent)
         }
 
         // Hide unused buttons
@@ -138,34 +166,6 @@ class NotificationHandler(private val context: Context) {
             remoteViews.setViewVisibility(buttonId, View.GONE)
         }
 
-        // Create pending intents for each category button
-        categories.take(3).forEachIndexed { index, category ->
-            val buttonId = when (index) {
-                0 -> R.id.category_button_1
-                1 -> R.id.category_button_2
-                2 -> R.id.category_button_3
-                else -> R.id.category_button_1
-            }
-            
-            val intent = Intent(context, NotificationReceiver::class.java).apply {
-                action = "CATEGORY_SELECTED"
-                putExtra("category", category)
-                putExtra("amount", amount)
-                putExtra("merchant", sender)
-                putExtra("message", message)
-            }
-            
-            val pendingIntent = PendingIntent.getBroadcast(
-                context,
-                index,
-                intent,
-                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-            )
-            
-            remoteViews.setOnClickPendingIntent(buttonId, pendingIntent)
-        }
-
-        // Create the notification
         val notification = NotificationCompat.Builder(context, channelId)
             .setSmallIcon(R.drawable.logo)
             .setContentTitle("New Expense")
@@ -177,5 +177,6 @@ class NotificationHandler(private val context: Context) {
             .build()
 
         notificationManager.notify(notificationId, notification)
+        Log.d("NotificationHandler", "Notification shown with ID: $notificationId")
     }
 }
