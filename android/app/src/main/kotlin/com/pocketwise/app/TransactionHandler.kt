@@ -5,18 +5,22 @@ import android.content.Context
 import android.content.SharedPreferences
 import android.util.Log
 import androidx.core.app.NotificationCompat
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 class TransactionHandler(private val context: Context) {
     private val sharedPreferences: SharedPreferences =
             context.getSharedPreferences(
                     "AppPreferences",
                     Context.MODE_PRIVATE
-            ) // Corrected file name
+            )
     private val notificationHandler = NotificationHandler(context)
+    private val categorySuggester = CategorySuggester(context)
 
     // Define regex patterns to parse messages
     private val incomePattern = Regex("You have received Ksh(\\d+\\.\\d{2}) from ([^\\.]+)\\.")
-    private val expensePattern = Regex("Ksh(\\d+\\.\\d{2}) (paid to|sent to) ([^\\.]+)\\.")
+    private val expensePattern = Regex("Ksh([\\d,]+\\.[\\d]{2}) (paid to|sent to) ([^\\s]+(?:\\s+[^\\s]+)*)")
 
     // Checks if the user ID exists and returns it or null
     private fun getUserId(): String? {
@@ -40,7 +44,7 @@ class TransactionHandler(private val context: Context) {
         notificationManager.notify(
                 3,
                 notification
-        ) // Using a different notification ID for this purpose
+        )
     }
 
     fun handleTransactionMessage(message: String) {
@@ -48,18 +52,20 @@ class TransactionHandler(private val context: Context) {
         if (userId.isNullOrEmpty()) {
             Log.d("TransactionHandler", "User ID is null or empty")
             showRegistrationNeededNotification()
-            return // Stop further processing if the user is not registered
+            return
         }
+
+        Log.d("TransactionHandler", "=== Processing message ===")
+        Log.d("TransactionHandler", "Message: $message")
 
         // Process the message for transactions
         val incomeMatchResult = incomePattern.find(message)
         val expenseMatchResult = expensePattern.find(message)
 
-        Log.d("TransactionHandler Initialized", "Message: $message, User ID: $userId")
         when {
             incomeMatchResult != null -> handleIncome(incomeMatchResult, userId)
-            expenseMatchResult != null -> handleExpense(expenseMatchResult, userId)
-            else -> Log.d("TransactionHandler", "No transaction detected in message")
+            expenseMatchResult != null -> handleExpense(message, userId)
+            else -> Log.d("TransactionHandler", "No transaction pattern matched in message")
         }
     }
 
@@ -78,16 +84,43 @@ class TransactionHandler(private val context: Context) {
         )
     }
 
-    private fun handleExpense(result: MatchResult, userId: String) {
-        val amount = result.groupValues[1]
-        val recipient = result.groupValues[3].trim()
-        Log.d("TransactionHandler", "Expense: Amount: $amount, To: $recipient, User ID: $userId")
-        saveToSharedPreferences("Expense: $amount to $recipient")
-        notificationHandler.showExpenseNotification(
-                amount,
-                recipient,
-                "Add KSH $amount expense to which category?"
-        )
+    private fun handleExpense(message: String, userId: String) {
+        Log.d("TransactionHandler", "=== Starting handleExpense ===")
+        Log.d("TransactionHandler", "Full Message: $message")
+        Log.d("TransactionHandler", "User ID: $userId")
+
+        // Launch coroutine for AI processing
+        CoroutineScope(Dispatchers.Main).launch {
+            try {
+                Log.d("TransactionHandler", "=== Starting AI processing ===")
+                val (amount, merchant, categories) = categorySuggester.processTransactionMessage(message)
+                
+                Log.d("TransactionHandler", "=== AI processing complete ===")
+                Log.d("TransactionHandler", "Amount: $amount")
+                Log.d("TransactionHandler", "Merchant: $merchant")
+                Log.d("TransactionHandler", "Categories: $categories")
+                
+                saveToSharedPreferences("Expense: $amount to $merchant")
+                
+                Log.d("TransactionHandler", "=== Showing notification ===")
+                notificationHandler.showExpenseNotification(
+                    amount = amount,
+                    sender = merchant,
+                    message = message,
+                    categories = categories
+                )
+            } catch (e: Exception) {
+                Log.e("TransactionHandler", "=== Error in handleExpense ===")
+                Log.e("TransactionHandler", "Error details: ${e.message}")
+                Log.e("TransactionHandler", "Stack trace: ${e.stackTraceToString()}")
+                // Fallback to showing notification with default categories
+                notificationHandler.showExpenseNotification(
+                    amount = "0.00",
+                    sender = "Unknown Merchant",
+                    message = message
+                )
+            }
+        }
     }
 
     private fun saveToSharedPreferences(transactionDetail: String) {

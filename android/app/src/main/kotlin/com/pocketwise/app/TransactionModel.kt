@@ -20,7 +20,8 @@ data class TransactionModel(
     var category: String = "",
     var hasAdded: Boolean = false,
     var userId: String = "",
-    var dateCreated: String = getCurrentDateTime() // Automatically set the current date
+    var dateCreated: String = getCurrentDateTime(),
+    var description: String = "" // Store the full transaction message
 ) {
     companion object {
         fun getCurrentDateTime(): String {

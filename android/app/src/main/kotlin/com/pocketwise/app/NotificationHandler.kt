@@ -1,122 +1,181 @@
 package com.pocketwise.app
 
+import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
+import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
+import android.graphics.Color
+import android.os.Build
 import android.util.Log
+import android.view.View
 import android.widget.RemoteViews
 import androidx.core.app.NotificationCompat
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
+
+class NotificationReceiver : BroadcastReceiver() {
+    private val saveToFirebase = SaveToFirebase()
+
+    override fun onReceive(context: Context, intent: Intent) {
+        Log.d("NotificationReceiver", "=== Received notification action ===")
+        Log.d("NotificationReceiver", "Action: ${intent.action}")
+        
+        when (intent.action) {
+            "CATEGORY_SELECTED" -> {
+                val category = intent.getStringExtra("category")
+                val amount = intent.getStringExtra("amount")
+                val merchant = intent.getStringExtra("merchant")
+                val message = intent.getStringExtra("message")
+                val userId = context.getSharedPreferences("AppPreferences", Context.MODE_PRIVATE)
+                    .getString("userId", null)
+                
+                Log.d("NotificationReceiver", "Category selected: $category")
+                Log.d("NotificationReceiver", "Amount: $amount")
+                Log.d("NotificationReceiver", "Merchant: $merchant")
+                Log.d("NotificationReceiver", "User ID: $userId")
+                
+                if (userId != null) {
+                    // Create transaction data matching the structure in transactions.dart
+                    val transaction = mapOf<String, Any>(
+                        "amount" to (amount ?: ""),
+                        "category" to (category ?: ""),
+                        "dateCreated" to SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()).format(Date()),
+                        "hasAdded" to true,
+                        "sender" to (merchant ?: ""),
+                        "type" to "expense",
+                        "userId" to userId
+                    )
+
+                    // Save to Firebase
+                    saveToFirebase.saveExpense(transaction)
+                    Log.d("NotificationReceiver", "Transaction saved to Firebase with category: $category")
+                } else {
+                    Log.e("NotificationReceiver", "No user ID found")
+                }
+            }
+        }
+    }
+}
 
 class NotificationHandler(private val context: Context) {
-    private val notificationManager: NotificationManager =
-            context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+    private val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+    private val channelId = "income_expense_channel"
+    private val notificationId = 1
+    private val categorySuggester = CategorySuggester(context)
 
-    fun showIncomeNotification(amount: String, sender: String, question: String) {
-        Log.d("NotificationHandler", "Notification initialized")
-        Log.d("NotificationHandler", "Amount: $amount, Sender: $sender")
-
-        // Setup the custom layout for the notification
-        val notificationLayout = RemoteViews(context.packageName, R.layout.notification_income)
-        notificationLayout.setTextViewText(
-                R.id.notification_question,
-                question
-        ) // Set dynamic question text
-
-        // Intent for "Yes" action
-        val yesIntent =
-                Intent(context, IncomeNotificationAction::class.java).apply {
-                    action = "com.pocketwise.app.YES_ACTION"
-                    putExtra("action", "yes")
-                    putExtra("amount", amount)
-                    putExtra("sender", sender)
-                }
-        val yesPendingIntent =
-                PendingIntent.getBroadcast(
-                        context,
-                        0,
-                        yesIntent,
-                        PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-                )
-
-        // Intent for "No" action
-        val noIntent =
-                Intent(context, IncomeNotificationAction::class.java).apply {
-                    action = "com.pocketwise.app.NO_ACTION"
-                    putExtra("action", "no")
-                    putExtra("amount", amount)
-                    putExtra("sender", sender)
-                }
-        val noPendingIntent =
-                PendingIntent.getBroadcast(
-                        context,
-                        1,
-                        noIntent,
-                        PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-                )
-
-        notificationLayout.setOnClickPendingIntent(R.id.yes_button, yesPendingIntent)
-        notificationLayout.setOnClickPendingIntent(R.id.no_button, noPendingIntent)
-
-        // Build the notification
-        val notification =
-                NotificationCompat.Builder(context, "income_expense_channel")
-                        .setSmallIcon(R.drawable.logo) // Ensure this drawable resource exists
-                        .setStyle(NotificationCompat.DecoratedCustomViewStyle())
-                        .setCustomContentView(notificationLayout)
-                        .setPriority(NotificationCompat.PRIORITY_HIGH)
-                        .build()
-
-        // Issue the notification
-        notificationManager.notify(1, notification)
+    init {
+        createNotificationChannel()
     }
-    fun showExpenseNotification(amount: String, sender: String, question: String) {
-        Log.d("NotificationHandler", "Expense Notification initialized for $amount from $sender")
 
-        // Setup the custom layout for the notification
-        val notificationLayout = RemoteViews(context.packageName, R.layout.notification_expense)
-        notificationLayout.setTextViewText(R.id.notification_question, question)
+    private fun createNotificationChannel() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val channel = NotificationChannel(
+                channelId,
+                "Income and Expense Notifications",
+                NotificationManager.IMPORTANCE_HIGH
+            ).apply {
+                description = "Notifications for income and expense transactions"
+                enableVibration(true)
+                enableLights(true)
+                lightColor = Color.BLUE
+            }
+            notificationManager.createNotificationChannel(channel)
+        }
+    }
 
-        // Define actions and their corresponding intents
-        val actions = arrayOf("Needs", "Wants", "Savings", "Debt")
-        actions.forEachIndexed { index, actionName ->
-            val intent =
-                    Intent(context, ExpenseNotificationAction::class.java).apply {
-                        // Correctly set the action property of the Intent
-                        this.action = "com.pocketwise.app.ACTION_$actionName"
-                        putExtra(
-                                "action",
-                                actionName
-                        ) // Keep the original action name for logging or processing
-                        putExtra("amount", amount)
-                        putExtra("sender", sender)
-                    }
-            val pendingIntent =
-                    PendingIntent.getBroadcast(
-                            context,
-                            index, // Ensure unique request code
-                            intent,
-                            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-                    )
-            notificationLayout.setOnClickPendingIntent(
-                    context.resources.getIdentifier(
-                            "button_${actionName.toLowerCase()}",
-                            "id",
-                            context.packageName
-                    ),
-                    pendingIntent
-            )
+    fun showIncomeNotification(amount: String, sender: String, message: String) {
+        val notification = NotificationCompat.Builder(context, channelId)
+            .setSmallIcon(R.drawable.logo)
+            .setContentTitle("Income Received")
+            .setContentText("Ksh$amount from $sender")
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .setAutoCancel(true)
+            .build()
+
+        notificationManager.notify(notificationId, notification)
+    }
+
+    fun showExpenseNotification(amount: String, sender: String, message: String, categories: List<String> = listOf()) {
+        Log.d("NotificationHandler", "=== Showing expense notification ===")
+        Log.d("NotificationHandler", "Amount: $amount")
+        Log.d("NotificationHandler", "Sender: $sender")
+        Log.d("NotificationHandler", "Categories: $categories")
+
+        // Create the notification layout
+        val remoteViews = RemoteViews(context.packageName, R.layout.notification_expense_dynamic)
+        
+        // Set the text values
+        remoteViews.setTextViewText(R.id.notification_title, "New Expense")
+        remoteViews.setTextViewText(R.id.notification_amount, "Ksh$amount")
+        remoteViews.setTextViewText(R.id.notification_merchant, sender)
+
+        // Create category buttons
+        val categoryButtons = categories.take(3).mapIndexed { index, category ->
+            val buttonId = when (index) {
+                0 -> R.id.category_button_1
+                1 -> R.id.category_button_2
+                2 -> R.id.category_button_3
+                else -> R.id.category_button_1
+            }
+            remoteViews.setTextViewText(buttonId, category)
+            remoteViews.setViewVisibility(buttonId, View.VISIBLE)
         }
 
-        // Build and issue the notification
-        val notification =
-                NotificationCompat.Builder(context, "income_expense_channel")
-                        .setSmallIcon(R.drawable.logo)
-                        .setStyle(NotificationCompat.DecoratedCustomViewStyle())
-                        .setCustomContentView(notificationLayout)
-                        .setPriority(NotificationCompat.PRIORITY_HIGH)
-                        .build()
+        // Hide unused buttons
+        (categories.size..2).forEach { index ->
+            val buttonId = when (index) {
+                0 -> R.id.category_button_1
+                1 -> R.id.category_button_2
+                2 -> R.id.category_button_3
+                else -> R.id.category_button_1
+            }
+            remoteViews.setViewVisibility(buttonId, View.GONE)
+        }
 
-        notificationManager.notify(2, notification)
+        // Create pending intents for each category button
+        categories.take(3).forEachIndexed { index, category ->
+            val buttonId = when (index) {
+                0 -> R.id.category_button_1
+                1 -> R.id.category_button_2
+                2 -> R.id.category_button_3
+                else -> R.id.category_button_1
+            }
+            
+            val intent = Intent(context, NotificationReceiver::class.java).apply {
+                action = "CATEGORY_SELECTED"
+                putExtra("category", category)
+                putExtra("amount", amount)
+                putExtra("merchant", sender)
+                putExtra("message", message)
+            }
+            
+            val pendingIntent = PendingIntent.getBroadcast(
+                context,
+                index,
+                intent,
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            )
+            
+            remoteViews.setOnClickPendingIntent(buttonId, pendingIntent)
+        }
+
+        // Create the notification
+        val notification = NotificationCompat.Builder(context, channelId)
+            .setSmallIcon(R.drawable.logo)
+            .setContentTitle("New Expense")
+            .setContentText("Ksh$amount to $sender")
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .setCustomContentView(remoteViews)
+            .setStyle(NotificationCompat.DecoratedCustomViewStyle())
+            .setAutoCancel(true)
+            .build()
+
+        notificationManager.notify(notificationId, notification)
     }
 }

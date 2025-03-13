@@ -66,19 +66,13 @@ class MainActivity : FlutterActivity() {
             when (call.method) {
                 "simulateExpenseSMS" -> {
                     val userId = call.argument<String>("USERID") ?: "Unknown User"
-                    val triggerImmediate = call.argument<Boolean>("triggerImmediate") ?: false
+                    Log.d("MainActivity", "Received simulateExpenseSMS call for user: $userId")
                     
-                    Log.d("MainActivity", "Received simulateExpenseSMS call for user: $userId, immediate: $triggerImmediate")
+                    // Save user ID and simulate SMS
+                    saveUserId(userId)
+                    simulateExpenseSMS(userId)
                     
-                    if (triggerImmediate) {
-                        // Immediately trigger the simulation and notification
-                        simulateExpenseSMS(userId)
-                        showNotification(userId)
-                        result.success("Immediate notification triggered for User ID: $userId")
-                    } else {
-                        saveUserId(userId)
-                        result.success("User ID saved: $userId")
-                    }
+                    result.success("Expense simulation triggered for User ID: $userId")
                 }
                 else -> {
                     Log.e("MainActivity", "Unknown method called: ${call.method}")
@@ -169,15 +163,14 @@ class MainActivity : FlutterActivity() {
         Log.d("MainActivity", "Starting to simulate expense SMS for user: $userId")
         try {
             // Simulating an SMS receive
-            val simulatedMessage =
-                    "SL72LA7S0G Confirmed. Ksh200.00 paid to GOOGLEMART MINI MARKET. on 7/12/24 at 5:05 PM.New M-PESA balance is Ksh0.00. Transaction cost, Ksh0.00. Amount you can transact within the day is 499,300.00. Download new M-PESA app on http://bit.ly/mpesappsm & get 500MB FREE data"
+            val simulatedMessage = "TCC6GMF35U Confirmed. Ksh120,500.00 sent to IM BANK C2B for account 00105465156150 on 12/3/25 at 9:10 PM New M-PESA balance is Ksh1,787.77. Transaction cost, Ksh108.00.Amount you can transact within the day is 379,430.00. Save frequent paybills for quick payment on M-PESA app https://bit.ly/mpesalnk"
             Log.d("MainActivity", "Simulated message created: $simulatedMessage")
             
+            // Create TransactionHandler and process the message
             val transactionHandler = TransactionHandler(this)
-            Log.d("MainActivity", "TransactionHandler created")
-            
             transactionHandler.handleTransactionMessage(simulatedMessage)
-            Log.d("MainActivity", "Transaction message handled successfully")
+            
+            Log.d("MainActivity", "Message processed and notification will be shown after AI response")
         } catch (e: Exception) {
             Log.e("MainActivity", "Error simulating expense SMS: ${e.message}")
             e.printStackTrace()
@@ -198,13 +191,13 @@ class MainActivity : FlutterActivity() {
             val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
             Log.d("MainActivity", "Notification manager obtained successfully")
             
-            // val notification = android.app.Notification.Builder(this, "income_expense_channel")
-            //     .setContentTitle("New Transaction")
-            //     .setContentText("Transaction processed for user: $userId")
-            //     .setSmallIcon(android.R.drawable.ic_dialog_info)
-            //     .setPriority(android.app.Notification.PRIORITY_HIGH)
-            //     .setAutoCancel(true)
-            //     .build()
+            val notification = android.app.Notification.Builder(this, "income_expense_channel")
+                .setContentTitle("New Transaction")
+                .setContentText("Transaction processed for user: $userId")
+                .setSmallIcon(android.R.drawable.ic_dialog_info)
+                .setPriority(android.app.Notification.PRIORITY_HIGH)
+                .setAutoCancel(true)
+                .build()
 
             Log.d("MainActivity", "Notification built successfully")
             notificationManager.notify(System.currentTimeMillis().toInt(), notification)

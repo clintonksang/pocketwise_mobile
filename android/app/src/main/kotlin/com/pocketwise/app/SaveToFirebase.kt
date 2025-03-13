@@ -109,15 +109,15 @@ class SaveToFirebase {
         }
     }
 
-    fun saveExpense(expense: TransactionModel) {
-        if (expense.userId.isNotEmpty()) {
+    fun saveExpense(transaction: Map<String, Any>) {
+        if (transaction["userId"] != null) {
             // Save to the expenses sub-collection under the specific user
             val documentRef = db.collection("users")
-                                 .document(expense.userId)
+                                 .document(transaction["userId"] as String)
                                  .collection("expenses")
                                  .document()  // This generates a new unique document ID
 
-            documentRef.set(expense)
+            documentRef.set(transaction)
                 .addOnSuccessListener {
                     Log.d("SaveToFirebase", "Expense successfully saved with ID: ${documentRef.id}")
                 }
