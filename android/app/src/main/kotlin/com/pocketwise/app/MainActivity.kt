@@ -168,7 +168,7 @@ class MainActivity : FlutterActivity() {
         Log.d("MainActivity", "Starting to simulate expense SMS for user: $userId")
         try {
             // Simulating an SMS receive
-            val simulatedMessage = "TCB1BMT67V Confirmed. Ksh300.00 sent to Ann  Njoroge 0700536455 on 11/3/25 at 7:56 PM. New M-PESA balance is Ksh122,467.77. Transaction cost, Ksh7.00.  Amount you can transact within the day is 495,940.00. To schedule payments on MPESA Ratiba today, dial *334#"
+            val simulatedMessage = "TKsh 1200.00 sent to KCB account ZEBAKI INVESTMENT LIMITED 7619486 has been received on 13/03/2025 at 11:18 AM. M-PESA Ref TCD9I8DXPH. Dial *844# to join Vooma."
             Log.d("MainActivity", "Simulated message created: $simulatedMessage")
             
             // Create TransactionHandler and process the message

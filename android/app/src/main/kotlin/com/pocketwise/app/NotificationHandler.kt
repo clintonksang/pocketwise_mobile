@@ -118,7 +118,7 @@ class NotificationHandler(private val context: Context) {
         val remoteViews = RemoteViews(context.packageName, R.layout.notification_expense_dynamic)
         
         // Set the text values
-        remoteViews.setTextViewText(R.id.notification_title, "New Expense")
+        remoteViews.setTextViewText(R.id.notification_title, "Add expense to category")
         remoteViews.setTextViewText(R.id.notification_amount, "Ksh$amount")
         remoteViews.setTextViewText(R.id.notification_merchant, sender)
 

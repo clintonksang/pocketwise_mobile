@@ -40,12 +40,16 @@ class _ProfileState extends State<Profile> {
         setState(() {
           phoneController.text = phoneNumber;
           emailController.text = email ?? '';
-          firstNameController.text = firstName ?? '';
-          lastNameController.text = lastName ?? '';
+          firstNameController.text = firstName ?? 'John';
+          lastNameController.text = lastName ?? 'Doe';
         });
       }
     } catch (e) {
       print('Error loading cached user data: $e');
+      setState(() {
+        firstNameController.text = 'John';
+        lastNameController.text = 'Doe';
+      });
     }
   }
 
