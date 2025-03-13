@@ -74,6 +74,11 @@ class MainActivity : FlutterActivity() {
                     
                     result.success("Expense simulation triggered for User ID: $userId")
                 }
+                "clearUserId" -> {
+                    Log.d("MainActivity", "Clearing user ID from native storage")
+                    clearUserId()
+                    result.success("User ID cleared successfully")
+                }
                 else -> {
                     Log.e("MainActivity", "Unknown method called: ${call.method}")
                     result.notImplemented()
@@ -183,6 +188,15 @@ class MainActivity : FlutterActivity() {
             apply()
         }
         Log.d("MainActivity", "User ID saved: $userId")
+    }
+
+    private fun clearUserId() {
+        val sharedPreferences = getSharedPreferences("AppPreferences", Context.MODE_PRIVATE)
+        sharedPreferences.edit().apply {
+            remove("userId")
+            apply()
+        }
+        Log.d("MainActivity", "User ID cleared from native storage")
     }
 
     private fun showNotification(userId: String) {

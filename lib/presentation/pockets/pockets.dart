@@ -475,11 +475,17 @@ class _PocketsState extends State<Pockets> {
                             CircleAvatar(
                               backgroundColor: black,
                               radius: 24,
-                              child: Text(
-                                '${firstName.isNotEmpty ? firstName[0] : ''}${lastName.isNotEmpty ? lastName[0] : ''}'
-                                    .toUpperCase(),
-                                style: AppTextStyles.normal
-                                    .copyWith(color: Colors.white),
+                              child: GestureDetector(
+                                onTap: () {
+                                  Navigator.pushNamed(
+                                      context, AppRouter.profile);
+                                },
+                                child: Text(
+                                  '${firstName.isNotEmpty ? firstName[0] : ''}${lastName.isNotEmpty ? lastName[0] : ''}'
+                                      .toUpperCase(),
+                                  style: AppTextStyles.normal
+                                      .copyWith(color: Colors.white),
+                                ),
                               ),
                             )
                           ],

@@ -51,3 +51,17 @@ Future<void> saveUserIDToNative(String userID) async {
     Logger().e('Unexpected error triggering notification: $e');
   }
 }
+
+Future<void> clearUserIDFromNative() async {
+  const platform = MethodChannel('com.pocketwise.app/simulator');
+  Logger().i('Clearing user ID from native storage');
+  try {
+    final String result = await platform.invokeMethod('clearUserId', {});
+    Logger().i('User ID cleared successfully: $result');
+  } on PlatformException catch (e) {
+    Logger().e('Failed to clear user ID: ${e.message}');
+    Logger().e('Error details: ${e.details}');
+  } catch (e) {
+    Logger().e('Unexpected error clearing user ID: $e');
+  }
+}

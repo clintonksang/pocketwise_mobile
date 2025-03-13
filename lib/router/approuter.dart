@@ -17,6 +17,7 @@ import '../presentation/pagemanager.dart';
 import '../presentation/splash.dart';
 import '../utils/widgets/pockets/viewPockets.dart';
 import '../presentation/pockets/view_income.dart';
+import '../profile/profile.dart';
 
 class AppRouter {
   static const String initial = "/";
@@ -34,6 +35,7 @@ class AppRouter {
   static const String otp = '/otp';
   static const String home = '/home';
   static const String view_income = '/view_income';
+  static const String profile = '/profile';
 
   static Route<dynamic> onGenerateRoute(RouteSettings settings) {
     final args = settings.arguments;
@@ -77,6 +79,8 @@ class AppRouter {
 
       case view_income:
         return _slideRoute(ViewIncome());
+      case profile:
+        return _slideRoute(Profile());
 
       default:
         return _slideRoute(PageManager()); // Fallback to initial route

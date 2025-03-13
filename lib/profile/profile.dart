@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:pocketwise/utils/constants/colors.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import '../router/approuter.dart';
+import '../utils/globals.dart';
 
 class Profile extends StatefulWidget {
   const Profile({super.key});
@@ -16,15 +19,43 @@ class _ProfileState extends State<Profile> {
   final TextEditingController emailController = TextEditingController();
   final TextEditingController phoneController = TextEditingController();
   FocusNode _focusNode = FocusNode();
-  bool isLoading = true;
+  bool isLoading = false;
+  bool isRefreshing = false;
 
   @override
   void initState() {
     super.initState();
-    loadUserData();
+    loadUserDataFromCache();
   }
 
-  Future<void> loadUserData() async {
+  Future<void> loadUserDataFromCache() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final String? phoneNumber = prefs.getString('phone');
+      final String? email = prefs.getString('email');
+      final String? firstName = prefs.getString('firstName');
+      final String? lastName = prefs.getString('lastName');
+
+      if (phoneNumber != null) {
+        setState(() {
+          phoneController.text = phoneNumber;
+          emailController.text = email ?? '';
+          firstNameController.text = firstName ?? '';
+          lastNameController.text = lastName ?? '';
+        });
+      }
+    } catch (e) {
+      print('Error loading cached user data: $e');
+    }
+  }
+
+  Future<void> refreshUserData() async {
+    if (isRefreshing) return;
+
+    setState(() {
+      isRefreshing = true;
+    });
+
     try {
       final prefs = await SharedPreferences.getInstance();
       final String? phoneNumber = prefs.getString('phone');
@@ -37,20 +68,55 @@ class _ProfileState extends State<Profile> {
 
         if (userDoc.docs.isNotEmpty) {
           final userData = userDoc.docs.first.data();
+
+          // Update SharedPreferences with fresh data
+          await prefs.setString('firstName', userData['firstname'] ?? '');
+          await prefs.setString('lastName', userData['lastname'] ?? '');
+          await prefs.setString('email', userData['email'] ?? '');
+
           setState(() {
             firstNameController.text = userData['firstname'] ?? '';
             lastNameController.text = userData['lastname'] ?? '';
             emailController.text = userData['email'] ?? '';
-            phoneController.text = userData['phoneNumber'] ?? '';
-            isLoading = false;
+            isRefreshing = false;
           });
         }
       }
     } catch (e) {
-      print('Error loading user data: $e');
+      print('Error refreshing user data: $e');
       setState(() {
-        isLoading = false;
+        isRefreshing = false;
       });
+    }
+  }
+
+  Future<void> logout() async {
+    try {
+      // Sign out from Firebase
+      await FirebaseAuth.instance.signOut();
+
+      // Clear SharedPreferences
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.clear();
+
+      // Clear native storage
+      await clearUserIDFromNative();
+
+      // Navigate to launcher page
+      if (mounted) {
+        Navigator.pushNamedAndRemoveUntil(
+          context,
+          AppRouter.initial,
+          (route) => false,
+        );
+      }
+    } catch (e) {
+      print('Error during logout: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error logging out. Please try again.')),
+        );
+      }
     }
   }
 
@@ -69,83 +135,107 @@ class _ProfileState extends State<Profile> {
     return Scaffold(
       backgroundColor: backgroundColor,
       body: SafeArea(
-        child: isLoading
-            ? const Center(child: CircularProgressIndicator())
-            : SingleChildScrollView(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Text(
-                      'Profile',
-                      style: TextStyle(
-                        fontSize: 24,
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    'Profile',
+                    style: TextStyle(
+                      fontSize: 24,
+                    ),
+                  ),
+                  IconButton(
+                    icon: Icon(
+                      isRefreshing ? Icons.refresh : Icons.refresh,
+                      color: isRefreshing ? Colors.grey : primaryColor,
+                    ),
+                    onPressed: isRefreshing ? null : refreshUserData,
+                  ),
+                ],
+              ),
+              const SizedBox(height: 20),
+              Stack(
+                children: [
+                  const SizedBox(height: 30),
+                  ClipOval(
+                    child: Image.network(
+                      'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSj8sKRgBGHeqyyzcVzby3YrHH_s0KVk-PozzvgrCdsueqkbhorjmZ0cByvks-Oy9tK38M&usqp=CAU',
+                      width: 120,
+                      height: 120,
+                      fit: BoxFit.cover,
+                    ),
+                  ),
+                  Positioned(
+                    bottom: 0,
+                    right: 0,
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: backgroundColor,
+                        shape: BoxShape.circle,
+                      ),
+                      child: IconButton(
+                        icon: Icon(
+                          Icons.edit,
+                          color: primaryColor,
+                        ),
+                        onPressed: () {},
                       ),
                     ),
-                    const SizedBox(height: 20),
-                    Stack(
-                      children: [
-                        const SizedBox(height: 30),
-                        ClipOval(
-                          child: Image.network(
-                            'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSj8sKRgBGHeqyyzcVzby3YrHH_s0KVk-PozzvgrCdsueqkbhorjmZ0cByvks-Oy9tK38M&usqp=CAU',
-                            width: 120,
-                            height: 120,
-                            fit: BoxFit.cover,
-                          ),
-                        ),
-                        Positioned(
-                          bottom: 0,
-                          right: 0,
-                          child: Container(
-                            decoration: BoxDecoration(
-                              color: backgroundColor,
-                              shape: BoxShape.circle,
-                            ),
-                            child: IconButton(
-                              icon: Icon(
-                                Icons.edit,
-                                color: primaryColor,
-                              ),
-                              onPressed: () {},
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      '${firstNameController.text} ${lastNameController.text}',
-                      style: const TextStyle(
-                        fontSize: 20,
-                      ),
-                    ),
-                    const SizedBox(height: 32),
-                    buildEditableCard(
-                      title: 'First Name',
-                      controller: firstNameController,
-                    ),
-                    const SizedBox(height: 16),
-                    buildEditableCard(
-                      title: 'Last Name',
-                      controller: lastNameController,
-                    ),
-                    const SizedBox(height: 16),
-                    buildEditableCard(
-                      title: 'Email',
-                      controller: emailController,
-                      keyboardType: TextInputType.emailAddress,
-                      readOnly: true,
-                    ),
-                    const SizedBox(height: 16),
-                    buildEditableCard(
-                      title: 'Phone Number',
-                      controller: phoneController,
-                      keyboardType: TextInputType.phone,
-                      readOnly: true,
-                    ),
-                  ],
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              Text(
+                '${firstNameController.text} ${lastNameController.text}',
+                style: const TextStyle(
+                  fontSize: 20,
                 ),
               ),
+              const SizedBox(height: 32),
+              buildEditableCard(
+                title: 'First Name',
+                controller: firstNameController,
+              ),
+              const SizedBox(height: 16),
+              buildEditableCard(
+                title: 'Last Name',
+                controller: lastNameController,
+              ),
+              const SizedBox(height: 16),
+              buildEditableCard(
+                title: 'Email',
+                controller: emailController,
+                keyboardType: TextInputType.emailAddress,
+                readOnly: true,
+              ),
+              const SizedBox(height: 16),
+              buildEditableCard(
+                title: 'Phone Number',
+                controller: phoneController,
+                keyboardType: TextInputType.phone,
+                readOnly: true,
+              ),
+              const SizedBox(height: 32),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                child: ElevatedButton(
+                  onPressed: logout,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.red,
+                    foregroundColor: Colors.white,
+                    minimumSize: const Size(double.infinity, 50),
+                  ),
+                  child: const Text('Logout'),
+                ),
+              ),
+              const SizedBox(height: 32),
+            ],
+          ),
+        ),
       ),
     );
   }
