@@ -37,7 +37,9 @@ class _LoginState extends State<Login> {
 
   Future<void> _prefillPhone() async {
     final SharedPreferences prefs = await SharedPreferences.getInstance();
-    phoneController.text = prefs.getString('phone') ?? '';
+    // Try to get email first, if not available then try phone
+    phoneController.text =
+        prefs.getString('email') ?? prefs.getString('phone') ?? '';
   }
 
   Future<void> _getPhone() async {

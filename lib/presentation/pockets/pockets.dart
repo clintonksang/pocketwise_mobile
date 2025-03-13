@@ -617,6 +617,7 @@ class _ExpenseListState extends State<ExpenseList> {
   List<ExpenseModel> filteredExpenses = [];
   double monthlyTotal = 0.0;
   bool isLoading = true;
+  final ExpenseRepository expenseRepository = ExpenseRepository();
 
   @override
   void initState() {
@@ -630,12 +631,16 @@ class _ExpenseListState extends State<ExpenseList> {
     });
 
     try {
+      // First refresh the transactions to get fresh data
+      await expenseRepository.refreshTransactions();
+
       final expenses = await expenseRepository.getTransactionsByMonth(month);
       final total = await expenseRepository.getTotalExpenseByMonth(month);
 
       if (mounted) {
         setState(() {
-          filteredExpenses = expenses;
+          filteredExpenses = expenses
+            ..sort((a, b) => b.dateCreated.compareTo(a.dateCreated));
           monthlyTotal = total;
           selectedMonth = month;
           isLoading = false;
@@ -653,60 +658,63 @@ class _ExpenseListState extends State<ExpenseList> {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        // Month selector
-        MonthSelector(
-          selectedMonth: selectedMonth,
-          onDateRangeSelected: (start, end) => _loadExpensesForMonth(start),
-        ),
-        SizedBox(height: heightPadding),
+    return RefreshIndicator(
+      onRefresh: () => _loadExpensesForMonth(selectedMonth),
+      child: Column(
+        children: [
+          // Month selector
+          MonthSelector(
+            selectedMonth: selectedMonth,
+            onDateRangeSelected: (start, end) => _loadExpensesForMonth(start),
+          ),
+          SizedBox(height: heightPadding),
 
-        // Monthly total
-        Padding(
-          padding: const EdgeInsets.symmetric(vertical: 8.0),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                "Monthly Total:",
-                style: AppTextStyles.bold,
-              ),
-              Text(
-                "${toLocaleString(monthlyTotal)} kes",
-                style: AppTextStyles.bold.copyWith(
-                  color: monthlyTotal > 0 ? Colors.red : Colors.green,
+          // Monthly total
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 8.0),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  "Monthly Total:",
+                  style: AppTextStyles.bold,
                 ),
-              ),
-            ],
-          ),
-        ),
-        SizedBox(height: heightPadding),
-
-        // Expenses list
-        if (isLoading)
-          Center(child: CircularProgressIndicator())
-        else if (filteredExpenses.isEmpty)
-          Center(
-            child: Text(
-              'No expenses for ${DateFormat('MMMM yyyy').format(selectedMonth)}',
-              style: TextStyle(fontSize: 16, color: Colors.grey),
+                Text(
+                  "${toLocaleString(monthlyTotal)} kes",
+                  style: AppTextStyles.bold.copyWith(
+                    color: monthlyTotal > 0 ? Colors.red : Colors.green,
+                  ),
+                ),
+              ],
             ),
-          )
-        else
-          ListView.builder(
-            shrinkWrap: true,
-            physics: NeverScrollableScrollPhysics(),
-            itemCount: filteredExpenses.length,
-            itemBuilder: (context, index) {
-              final expense = filteredExpenses[index];
-              return Container(
-                width: MediaQuery.of(context).size.width,
-                child: ExpenseCard(expenseModel: expense),
-              );
-            },
           ),
-      ],
+          SizedBox(height: heightPadding),
+
+          // Expenses list
+          if (isLoading)
+            Center(child: CircularProgressIndicator())
+          else if (filteredExpenses.isEmpty)
+            Center(
+              child: Text(
+                'No expenses for ${DateFormat('MMMM yyyy').format(selectedMonth)}',
+                style: TextStyle(fontSize: 16, color: Colors.grey),
+              ),
+            )
+          else
+            ListView.builder(
+              shrinkWrap: true,
+              physics: NeverScrollableScrollPhysics(),
+              itemCount: filteredExpenses.length,
+              itemBuilder: (context, index) {
+                final expense = filteredExpenses[index];
+                return Container(
+                  width: MediaQuery.of(context).size.width,
+                  child: ExpenseCard(expenseModel: expense),
+                );
+              },
+            ),
+        ],
+      ),
     );
   }
 }

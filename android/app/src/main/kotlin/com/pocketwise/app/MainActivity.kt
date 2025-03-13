@@ -163,7 +163,7 @@ class MainActivity : FlutterActivity() {
         Log.d("MainActivity", "Starting to simulate expense SMS for user: $userId")
         try {
             // Simulating an SMS receive
-            val simulatedMessage = "TCC6GMF35U Confirmed. Ksh120,500.00 sent to IM BANK C2B for account 00105465156150 on 12/3/25 at 9:10 PM New M-PESA balance is Ksh1,787.77. Transaction cost, Ksh108.00.Amount you can transact within the day is 379,430.00. Save frequent paybills for quick payment on M-PESA app https://bit.ly/mpesalnk"
+            val simulatedMessage = "TCB1BMT67V Confirmed. Ksh300.00 sent to Ann  Njoroge 0700536455 on 11/3/25 at 7:56 PM. New M-PESA balance is Ksh122,467.77. Transaction cost, Ksh7.00.  Amount you can transact within the day is 495,940.00. To schedule payments on MPESA Ratiba today, dial *334#"
             Log.d("MainActivity", "Simulated message created: $simulatedMessage")
             
             // Create TransactionHandler and process the message

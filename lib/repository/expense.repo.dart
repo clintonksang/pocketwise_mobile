@@ -126,9 +126,35 @@ class ExpenseRepository {
 
   Future<void> refreshTransactions() async {
     final prefs = await SharedPreferences.getInstance();
+    // Clear all cache
     await prefs.remove(CACHE_KEY_EXPENSES);
     await prefs.remove(CACHE_TIMESTAMP_KEY);
-    await getAllTransactions(); // This will fetch fresh data and update cache
+
+    // Force a fresh fetch from Firebase
+    final String? userId = prefs.getString('phone') ?? '';
+    if (userId != null && userId.isNotEmpty) {
+      try {
+        final QuerySnapshot snapshot = await _firestore
+            .collection('users')
+            .doc(userId)
+            .collection('expenses')
+            .get();
+
+        final List<ExpenseModel> transactions = snapshot.docs.map((doc) {
+          return ExpenseModel.fromMap(doc.data() as Map<String, dynamic>);
+        }).toList();
+
+        // Update cache with fresh data
+        await _saveToCache(transactions);
+
+        // Update the expense stream
+        _calculateTotalExpense();
+
+        Logger().i('Expenses refreshed successfully');
+      } catch (e) {
+        Logger().e('Error refreshing expenses: $e');
+      }
+    }
   }
 
   // Get transactions sorted by date
