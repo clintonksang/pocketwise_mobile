@@ -31,6 +31,14 @@
           }
         },
         {
+          "client_id": "284683212345-vm8m217q7f3qvkt6loe99scsqh2dkjl3.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.pocketwise.app",
+            "certificate_hash": "922773d406deafc1bdc9311b905b7710ee283738"
+          }
+        },
+        {
           "client_id": "284683212345-emhf4t5c17ovdp4b3i9l4vd2r88ause5.apps.googleusercontent.com",
           "client_type": 3
         }
